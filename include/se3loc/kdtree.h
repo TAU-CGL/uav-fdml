@@ -21,12 +21,14 @@ namespace se3loc {
     // The array `sorted` is of size dim * points.size(), each points.size() are points sorder by some dimension.
     // Each item in sorted points so some point in `points`.
     // Store in grey points that are already added to KDtree, that is, grey[point_idx] == 1 iff we already added point_idx to the tree.
+    // We refer to available point as white (and having value 0) and grey points are appended and having value 1
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     template <int dim, typename dtype>
     struct KDTreePoints {
         boost::container::vector<Point<dim, dtype>> points;
         boost::container::vector<uint32_t> sorted;
         boost::container::vector<uint8_t> grey; // Since this is a boolean array we can further optimize down the size
+        uint32_t greyCnt = 0;
         
         void init(boost::container::vector<Point<dim, dtype>> points) {
             this->points = points;
@@ -43,6 +45,19 @@ namespace se3loc {
                         return points[a].data[j] < points[b].data[j];
                     });
             }
+        }
+
+        // Set the color of a point to grey (instead of white)
+        void colorPoint(uint32_t idx) {
+            grey[idx] = 1; greyCnt++;
+        }
+
+        dtype getMedianValue(uint8_t dimCut) {
+            uint32_t cnt = 0, idx = 0;
+            while (cnt < (points.size() - greyCnt) / 2) {
+                if (!grey[sorted[dimCut * points.size() + idx++]]) cnt++;
+            }
+            return points[sorted[dimCut * points.size() + idx]][dimCut];
         }
     };
 

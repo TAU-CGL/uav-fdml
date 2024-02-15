@@ -2,6 +2,7 @@
 
 #include <boost/container/vector.hpp>
 #include <boost/range/algorithm/sort.hpp>
+#include <boost/algorithm/cxx11/any_of.hpp>
 
 #include "geometry.h"
 
@@ -14,26 +15,24 @@ namespace se3loc {
         uint8_t cutDim;
         dtype cutValue;
         boost::container::vector<Point<dim, dtype>> points;
+
+        KDTreeNode* left = nullptr;
+        KDTreeNode* right = nullptr;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Store the points and also sort only once.
     // The array `sorted` is of size dim * points.size(), each points.size() are points sorder by some dimension.
     // Each item in sorted points so some point in `points`.
-    // Store in grey points that are already added to KDtree, that is, grey[point_idx] == 1 iff we already added point_idx to the tree.
-    // We refer to available point as white (and having value 0) and grey points are appended and having value 1
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     template <int dim, typename dtype>
     struct KDTreePoints {
         boost::container::vector<Point<dim, dtype>> points;
         boost::container::vector<uint32_t> sorted;
-        boost::container::vector<uint8_t> grey; // Since this is a boolean array we can further optimize down the size
-        uint32_t greyCnt = 0;
         
         void init(boost::container::vector<Point<dim, dtype>> points) {
             this->points = points;
             this->sorted = boost::container::vector<uint32_t>(dim * this->points.size());
-            this->grey = boost::container::vector<uint8_t>(this->points.size(), 0);
 
             size_t N = this->points.size();
             for (int i = 0; i < N; i++) for (int j = 0; j < dim; j++) this->sorted[j * N + i] = i; // keep arrays sequential
@@ -47,25 +46,62 @@ namespace se3loc {
             }
         }
 
-        // Set the color of a point to grey (instead of white)
-        void colorPoint(uint32_t idx) {
-            grey[idx] = 1; greyCnt++;
-        }
-
-        dtype getMedianValue(uint8_t dimCut) {
-            uint32_t cnt = 0, idx = 0;
-            while (cnt < (points.size() - greyCnt) / 2) {
-                if (!grey[sorted[dimCut * points.size() + idx++]]) cnt++;
+        dtype getMedianValue(uint8_t cutDim, boost::container::vector<uint32_t> indices) {
+            int cnt = 0;
+            for (uint32_t i = 0; i < points.size(); ++i) {
+                uint32_t idx = sorted[cutDim * points.size() + i];
+                if (!boost::algorithm::any_of_equal(indices, idx)) continue;
+                if (cnt++ == indices.size() / 2) return points[idx][cutDim];
             }
-            return points[sorted[dimCut * points.size() + idx]][dimCut];
+            return 0; // Should not get here
         }
     };
 
     //////////////////////////////////  
     // The KDTree algorithm & object
     //////////////////////////////////
-    template <typename dtype>
+    template <int dim, typename dtype>
     class KDTree {
+    public:
+        void fit(boost::container::vector<Point<dim, dtype>>& points) {
+            _points.init(points);
+            boost::container::vector<uint32_t> indices;
+            for (uint32_t idx = 0; idx < points.size(); idx++) indices.push_back(idx);
+            fitRecurse(indices, 0);
+        }
 
+    private:
+        KDTreePoints<dim, dtype> _points;
+        boost::container::vector<KDTreeNode<dim, dtype>> _nodes;
+        KDTreeNode<dim, dtype>* root = nullptr;
+
+        KDTreeNode<dim, dtype>* fitRecurse(boost::container::vector<uint32_t> indices, uint32_t depth) {
+            if (!indices.size()) return nullptr;
+
+            uint8_t cutDim = (uint8_t)depth % dim;
+            dtype median = _points.getMedianValue(cutDim, indices);
+
+            _nodes.push_back(KDTreeNode<dim, dtype>());
+            KDTreeNode<dim, dtype>* node = &_nodes[_nodes.size() - 1];
+            node->cutDim = cutDim;
+            node->cutValue = median;
+            
+            boost::container::vector<uint32_t> indicesLower, indicesGreater;
+            int lowerCnt = 0, greaterCnt = 0;
+            indicesLower.resize(indices.size() / 2 + 1);
+            indicesGreater.resize(indices.size() / 2 + 1);
+            for (auto idx : indices) {
+                if (_points.points[idx][cutDim] == median) node->points.push_back(_points.points[idx]);
+                else if (_points.points[idx][cutDim] < median) indicesLower[lowerCnt++] = idx;
+                else indicesGreater[greaterCnt++] = idx;
+            }
+            indicesLower.resize(lowerCnt);
+            indicesGreater.resize(greaterCnt);
+
+            node->left = fitRecurse(indicesLower, depth + 1);
+            node->right = fitRecurse(indicesGreater, depth + 1);
+            return node;
+            // return nullptr;
+        }
     };
 }

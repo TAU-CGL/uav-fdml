@@ -7,54 +7,15 @@
 #include "geometry.h"
 
 namespace se3loc {
-    /////////////////////////  
-    // A single KDTree node
-    /////////////////////////
+
     template <int dim, typename dtype>
     struct KDTreeNode {
+        Point<dim, dtype> point;
         uint8_t cutDim;
         dtype cutValue;
-        boost::container::vector<Point<dim, dtype>> points;
 
         KDTreeNode* left = nullptr;
         KDTreeNode* right = nullptr;
-    };
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Store the points and also sort only once.
-    // The array `sorted` is of size dim * points.size(), each points.size() are points sorder by some dimension.
-    // Each item in sorted points so some point in `points`.
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    template <int dim, typename dtype>
-    struct KDTreePoints {
-        boost::container::vector<Point<dim, dtype>> points;
-        boost::container::vector<uint32_t> sorted;
-        
-        void init(boost::container::vector<Point<dim, dtype>> points) {
-            this->points = points;
-            this->sorted = boost::container::vector<uint32_t>(dim * this->points.size());
-
-            size_t N = this->points.size();
-            for (int i = 0; i < N; i++) for (int j = 0; j < dim; j++) this->sorted[j * N + i] = i; // keep arrays sequential
-
-            for (int j = 0; j < dim; j++) {
-                std::sort(
-                    &this->sorted[j * N], &this->sorted[j * N] + N,
-                    [j, points](const int32_t& a, const int32_t& b) {
-                        return points[a].data[j] < points[b].data[j];
-                    });
-            }
-        }
-
-        dtype getMedianValue(uint8_t cutDim, boost::container::vector<uint32_t> indices) {
-            int cnt = 0;
-            for (uint32_t i = 0; i < points.size(); ++i) {
-                uint32_t idx = sorted[cutDim * points.size() + i];
-                if (!boost::algorithm::any_of_equal(indices, idx)) continue;
-                if (cnt++ == indices.size() / 2) return points[idx][cutDim];
-            }
-            return 0; // Should not get here
-        }
     };
 
     //////////////////////////////////  
@@ -64,44 +25,116 @@ namespace se3loc {
     class KDTree {
     public:
         void fit(boost::container::vector<Point<dim, dtype>>& points) {
-            _points.init(points);
-            boost::container::vector<uint32_t> indices;
-            for (uint32_t idx = 0; idx < points.size(); idx++) indices.push_back(idx);
-            fitRecurse(indices, 0);
+            _points = points;
+            _nodes = boost::container::vector<KDTreeNode<dim, dtype>>(_points.size() * 2);
+            _tmpSize = 0;
+            root = fitRecurse(0, points.size(), 0);
+        }
+
+        Point<dim, dtype> nearestNeighbor(Point<dim, dtype> q) {
+            // Point<dim, dtype> p = findCell(q, root);
+            // dtype w = sqrt((p - q).squaredNorm());
+            Point<dim, dtype> p;
+            dtype w = -1;
+            nearestNeighborRecurse(q, root, p, w);
+            return p;
         }
 
     private:
-        KDTreePoints<dim, dtype> _points;
+    public:
+        boost::container::vector<Point<dim, dtype>> _points;
         boost::container::vector<KDTreeNode<dim, dtype>> _nodes;
         KDTreeNode<dim, dtype>* root = nullptr;
+        uint32_t _tmpSize;
 
-        KDTreeNode<dim, dtype>* fitRecurse(boost::container::vector<uint32_t> indices, uint32_t depth) {
-            if (!indices.size()) return nullptr;
+        KDTreeNode<dim, dtype>* fitRecurse(int32_t left, int32_t right, int32_t depth) {
+            if (right < left) return nullptr;
+            if (left >= _points.size()) return nullptr;
 
             uint8_t cutDim = (uint8_t)depth % dim;
-            dtype median = _points.getMedianValue(cutDim, indices);
+            sortSubset(cutDim, left, right);
 
-            _nodes.push_back(KDTreeNode<dim, dtype>());
-            KDTreeNode<dim, dtype>* node = &_nodes[_nodes.size() - 1];
+            int32_t middle = left + (right - left) / 2;
+            dtype median = _points[middle][cutDim];
+            KDTreeNode<dim, dtype>* node = &_nodes[_tmpSize++];
+            if (left == right) node->point = _points[middle];
             node->cutDim = cutDim;
             node->cutValue = median;
-            
-            boost::container::vector<uint32_t> indicesLower, indicesGreater;
-            int lowerCnt = 0, greaterCnt = 0;
-            indicesLower.resize(indices.size() / 2 + 1);
-            indicesGreater.resize(indices.size() / 2 + 1);
-            for (auto idx : indices) {
-                if (_points.points[idx][cutDim] == median) node->points.push_back(_points.points[idx]);
-                else if (_points.points[idx][cutDim] < median) indicesLower[lowerCnt++] = idx;
-                else indicesGreater[greaterCnt++] = idx;
-            }
-            indicesLower.resize(lowerCnt);
-            indicesGreater.resize(greaterCnt);
 
-            node->left = fitRecurse(indicesLower, depth + 1);
-            node->right = fitRecurse(indicesGreater, depth + 1);
+            node->left = fitRecurse(left, middle - 1, depth + 1);
+            node->right = fitRecurse(middle + 1, right, depth + 1);
+
             return node;
-            // return nullptr;
+        }
+
+        Point<dim, dtype> findCell(Point<dim, dtype> q, KDTreeNode<dim, dtype>* node) {
+            if (q[node->cutDim] <= node->cutValue) {
+                if (!node->left) return node->point;
+                return findCell(q, node->left);
+            } else {
+                if (!node->right) return node->point;
+                return findCell(q, node->right);
+            }
+        }
+
+        void nearestNeighborRecurse(Point<dim, dtype> q, KDTreeNode<dim, dtype>* node, Point<dim, dtype>& p, dtype& w) {
+            if (!node->left) {
+                dtype w_ = std::sqrt((q - node->point).squaredNorm());
+                if (w < 0 ||w_ < w) {
+                    w = w_;
+                    p = node->point;
+                }
+                return;
+            }
+
+            // nearestNeighborRecurse(q, node->left, p, w);
+            // nearestNeighborRecurse(q, node->right, p, w);
+
+            if (w < 0) {
+                if (q[node->cutDim] <= node->cutValue) {
+                    nearestNeighborRecurse(q, node->left, p, w);
+                    if (q[node->cutDim] + w > node->cutValue) nearestNeighborRecurse(q, node->right, p, w);
+                } else {
+                    nearestNeighborRecurse(q, node->right, p, w);
+                    if (q[node->cutDim] - w <= node->cutValue) nearestNeighborRecurse(q, node->left, p, w);
+                }
+            } else {
+                if (q[node->cutDim] - w <= node->cutValue) nearestNeighborRecurse(q, node->left, p, w);
+                if (q[node->cutDim] + w > node->cutValue) nearestNeighborRecurse(q, node->right, p, w);
+            }
+
+        }
+
+        // void nearestNeighborRecurse(Point<dim, dtype> q, KDTreeNode<dim, dtype>* node, Point<dim, dtype>& p, dtype& w) {
+        //     if (!node) return;
+            
+        //     dtype w_ = std::sqrt((q - node->point).squaredNorm());
+        //     if (w_ < w) {
+        //         w = w_;
+        //         p = node->point;
+        //     }
+
+        //     bool searchLeft = q[node->cutDim] <= node->cutValue;
+        //     dtype diff = abs(q[node->cutDim] - node->cutValue); // / (dim * dim * 4);
+        //     if (searchLeft) {
+        //         nearestNeighborRecurse(q, node->left, p, w);
+        //         if (diff < w) nearestNeighborRecurse(q, node->right, p, w);
+        //     } else {
+        //         nearestNeighborRecurse(q, node->right, p, w);
+        //         if (diff < w) nearestNeighborRecurse(q, node->left, p, w);
+        //     }
+        // }
+
+        // ------------------------------------------------------------------------
+
+        // Sort subset from left idx (inclusive) up to right (exclusive)
+        void sortSubset(uint8_t cutDim, int32_t left, int32_t right) {
+            std::sort(
+                _points.begin() + left, _points.begin() + right,
+                [cutDim](const Point<dim, dtype>& a, const Point<dim, dtype>& b) {
+                    return a.data[cutDim] < b.data[cutDim];
+                }
+            );
         }
     };
 }

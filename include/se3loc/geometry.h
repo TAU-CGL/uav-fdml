@@ -23,10 +23,22 @@ namespace se3loc {
 
 
         inline dtype operator[](const uint8_t& idx) { return data[idx]; }
+        inline Point<dim, dtype> operator-(const Point<dim, dtype>& other) { 
+            Point res;
+            for (int i = 0; i < dim; ++i) res.data[i] = this->data[i] - other.data[i];
+            return res;
+        }
+
+        dtype squaredNorm() const { 
+            dtype res = 0;
+            for (int i = 0; i < dim; ++i) res += data[i] * data[i];
+            return res;
+        }
 
         std::string str() {
             return fmt::format("point_{}({})", dim, fmt::join(boost::span(data, data + dim), ", "));
         }
+
 
 
         static Point uniform() {

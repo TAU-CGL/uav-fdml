@@ -6,60 +6,50 @@ using fmt::format, fmt::print;
 
 #include "se3loc/se3loc.h"
 
-constexpr uint32_t NUM_POINTS = 4096 * 2;
-
-TEST(KDTreeTest, TestPointsPresorting) {
-    se3loc::Random::seed(0);
-    boost::container::vector<se3loc::Point3<double>> points;
-    for (uint32_t i = 0; i < NUM_POINTS; ++i) points.push_back(se3loc::Point3<double>::uniform());
-
-    se3loc::KDTreePoints<3, double> kdpoints;
-    kdpoints.init(points);
-
-    for (uint32_t i = 0; i < NUM_POINTS - 1; ++i) {
-        for (uint8_t j = 0; j < 3; j++) {
-            EXPECT_LE(
-                points[kdpoints.sorted[j * NUM_POINTS + i]][j],
-                points[kdpoints.sorted[j * NUM_POINTS + i + 1]][j]
-            );
-        }
-    }
-}
-
-TEST(KDTreeTest, TestPointsMedianValue) {
-    se3loc::Random::seed(0);
-    boost::container::vector<se3loc::Point3<double>> points;
-    for (uint32_t i = 0; i < NUM_POINTS; ++i) points.push_back(se3loc::Point3<double>::uniform());
-
-    se3loc::KDTreePoints<3, double> kdpoints;
-    kdpoints.init(points);
-
-    boost::container::vector<uint32_t> indices;
-    for (uint32_t idx = 0; idx < points.size(); idx++) indices.push_back(idx);
-
-    for (uint8_t j = 0; j < 3; j++) {
-        double median = kdpoints.getMedianValue(j, indices);
-        int32_t cntLower = 0, cntGreater = 0;
-        for (uint32_t i = 0; i < NUM_POINTS; i++) {
-            if (points[i][j] > median) cntGreater++;
-            if (points[i][j] < median) cntLower++;
-        }
-        EXPECT_LE(abs(cntGreater - cntLower), 1) << format(
-            "Median is {}, lower:{} greater:{}\n", median, cntLower, cntGreater
-        );
-    }
-}
+constexpr uint8_t DIM = 2;
+constexpr int32_t NUM_POINTS = 16;
 
 TEST(KDTreeTest, TestBuildTree) {
     se3loc::Random::seed(0);
-    boost::container::vector<se3loc::Point3<double>> points;
-    for (uint32_t i = 0; i < NUM_POINTS; ++i) {
-        points.push_back(se3loc::Point3<double>::uniform());
-        // print("{} {} {}\n", points[i][0], points[i][1], points[i][2]);
-    }
-
-
-
-    se3loc::KDTree<3, double> kdtree;
+    boost::container::vector<se3loc::Point<DIM, double>> points;
+    for (int32_t i = 0; i < NUM_POINTS; ++i) points.push_back(se3loc::Point<DIM, double>::uniform());
+    se3loc::KDTree<DIM, double> kdtree;
     kdtree.fit(points);
+}
+
+TEST(KDTreeTest, TestNearestNeighbors) {
+    se3loc::Random::seed(0);
+    boost::container::vector<se3loc::Point<DIM, double>> points;
+    for (int32_t i = 0; i < NUM_POINTS; ++i) points.push_back(se3loc::Point<DIM, double>::uniform());
+    se3loc::KDTree<DIM, double> kdtree;
+    kdtree.fit(points);
+    // for (auto point : kdtree._points) {
+    //     print("{} {}; ", point[0], point[1]);
+    // }
+    // print("\n");
+
+    boost::container::vector<se3loc::Point<DIM, double>> qs;
+    for (int32_t i = 0; i < NUM_POINTS; ++i) qs.push_back(se3loc::Point<DIM, double>::uniform());
+    int tmp = 0;
+    for (auto q : qs) {
+        if (tmp++ != 7) continue; 
+        // Get ground truth
+        se3loc::Point<DIM, double> gt;
+        double minDist = 1e30;
+        for (auto p : points) {
+            double dist = std::sqrt((q - p).squaredNorm());
+            if (dist < minDist) {
+                gt = p;
+                minDist = dist;
+            }
+        }
+
+        // Get nearest neighbor
+        se3loc::Point<DIM, double> neighbor = kdtree.nearestNeighbor(q);
+
+        double err = abs(std::sqrt((q - gt).squaredNorm()) - std::sqrt((q - neighbor).squaredNorm()));
+        EXPECT_LT(err, 1e-4);
+
+
+    }
 }

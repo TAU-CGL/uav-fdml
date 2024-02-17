@@ -1,0 +1,7 @@
+[requires]
+fmt
+boost
+gtest
+
+[generators]
+cmake

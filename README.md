@@ -7,5 +7,5 @@ TBD.
 
 Dependencies:
 * boost
-* fmtlib 
+* fmt
 * gtest 

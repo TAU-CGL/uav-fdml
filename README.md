@@ -1,5 +1,3 @@
-https://github.com/TAU-CGL/se3-localization/actions/workflows/build.yml/badge.svg
-
 [![Build](https://github.com/TAU-CGL/se3-localization/actions/workflows/build.yml/badge.svg)](https://github.com/TAU-CGL/se3-localization/actions/workflows/build.yml)
 [![Tests](https://github.com/TAU-CGL/se3-localization/actions/workflows/tests.yml/badge.svg)](https://github.com/TAU-CGL/se3-localization/actions/workflows/tests.yml)
 

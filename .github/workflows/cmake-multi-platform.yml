@@ -30,6 +30,9 @@ jobs:
       - name: Install Conan
         run: pip install conan pytest && conan --version
 
+      - name: Setup conan profile
+        run: conan profile detect
+
       - name: Install deps
         run: conan install .
 

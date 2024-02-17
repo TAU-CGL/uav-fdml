@@ -35,7 +35,6 @@ namespace po = boost::program_options;
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();\
     for (int32_t __exp_idx = 0; __exp_idx < __num_experiments; ++__exp_idx) {
 
-#define END_RUN() \
-    }\
+#define END_RUN() }\
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();\
     std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 1e-6 / (double)__num_experiments << "[s]" << std::endl;

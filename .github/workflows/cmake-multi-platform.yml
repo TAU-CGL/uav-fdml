@@ -5,18 +5,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019, ubuntu-latest]
+        os: [ubuntu-latest]
         include:
-          - os: windows-2019
+          # - os: windows-2019
           # - os: macos-14
           - os: ubuntu-latest
     steps:
       - uses: actions/checkout@v3.5.2
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: amd64
-        if: ${{ matrix.os == 'windows-2019' }}
-        name: setup msvc vcvars
+      # - uses: ilammy/msvc-dev-cmd@v1
+      #   with:
+      #     arch: amd64
+      #   if: ${{ matrix.os == 'windows-2019' }}
+      #   name: setup msvc vcvars
 
       - name: Setup Python
         uses: actions/setup-python@v4.6.0

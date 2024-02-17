@@ -15,7 +15,7 @@ namespace se3loc {
         dtype data[dim] = {0};
         Point(uint32_t k, ...) {
             va_list va;
-            va_start(va, k);
+            va_start(va, dim);
             for (int i = 0; i < k && i < dim; ++i) data[i] = va_arg(va, dtype);
             va_end(va);
         }

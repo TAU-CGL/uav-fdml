@@ -57,8 +57,8 @@ jobs:
     - name: Get Conan
       uses: turtlebrowser/get-conan@v1.0
 
-    # - name: Create default profile
-    #   run: conan profile detect
+    - name: Create default profile
+      run: conan profile detect
       
     # - name: Update profile
     #   run: conan profile update settings.compiler.libcxx=libstdc++20 default

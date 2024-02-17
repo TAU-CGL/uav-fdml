@@ -1,10 +1,4 @@
-#include <fmt/core.h>
-#include <gtest/gtest.h>
-#include <boost/container/vector.hpp>
-
-using fmt::format, fmt::print;
-
-#include "se3loc/se3loc.h"
+#include "tests.h"
 
 constexpr uint8_t DIM = 3;
 constexpr int32_t NUM_POINTS = 4096;
@@ -47,7 +41,4 @@ TEST(KDTreeTest, TestNearestNeighbors) {
     }
 }
 
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+TEST_MAIN()

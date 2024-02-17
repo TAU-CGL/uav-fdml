@@ -16,6 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 include_directories("include")
 
 add_subdirectory(apps)
+enable_testing()
 add_subdirectory(tests)
 
 # Copy the resources directory to the build

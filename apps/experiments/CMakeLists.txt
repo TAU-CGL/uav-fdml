@@ -6,10 +6,12 @@ find_package(Boost COMPONENTS container program_options REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 set(EXPERIMENT_LINKS fmt::fmt ${Boost_LIBRARIES})
 
-# Experiments are added here. Only a single cpp file supported (but unlimited # of headers)
-set (EXPERIMENTS 
-    ex_kdtree_construct
-)
+file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+set (EXPERIMENTS)
+foreach (FILEPATH ${SRC_FILES})
+    get_filename_component(FILEPATH_WE ${FILEPATH} NAME_WE)
+    list(APPEND EXPERIMENTS ${FILEPATH_WE})
+endforeach()
 
 # Add executable foreach experiment
 foreach(EXPERIMENT ${EXPERIMENTS})

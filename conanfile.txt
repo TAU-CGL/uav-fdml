@@ -1,7 +1,7 @@
 [requires]
-fmt
-boost
-gtest
+fmt/10.2.1
+boost/1.84.0
+gtest/1.14.0
 
 [generators]
 cmake

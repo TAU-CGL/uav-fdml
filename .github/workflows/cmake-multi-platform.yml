@@ -30,6 +30,9 @@ jobs:
       - name: Install Conan
         run: pip install conan pytest && conan --version
 
+      - name: Install deps
+        run: conan install .
+
       - name: Setup CMake and Ninja
         uses: lukka/get-cmake@latest
         with:

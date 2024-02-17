@@ -60,8 +60,8 @@ jobs:
     - name: Create default profile
       run: conan profile detect
       
-    # - name: Update profile
-    #   run: conan profile update settings.compiler.libcxx=libstdc++20 default
+    - name: Update profile
+      run: conan profile update settings.compiler.libcxx=libstdc++20 default
       
     - name: Install dependencies
       run: conan install . -s build_type=${{matrix.build_type}} --output-folder=. --build=missing
@@ -72,7 +72,6 @@ jobs:
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_CXX_FLGS="-stdlib=libc++ -std=c++20"
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake"

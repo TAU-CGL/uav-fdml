@@ -46,3 +46,8 @@ TEST(KDTreeTest, TestNearestNeighbors) {
         for (int j = 0; j < DIM; j++) EXPECT_EQ(neighbor[j], gt[j]);
     }
 }
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

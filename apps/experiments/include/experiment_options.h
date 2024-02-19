@@ -15,9 +15,10 @@ namespace po = boost::program_options;
         po::options_description desc((description));\
         int32_t __num_experiments;\
         std::chrono::steady_clock::time_point begin, end;\
+        std::chrono::duration<double, std::milli> __duration;\
         desc.add_options()\
             ("help", "produce help message")\
-            ("num_experiments", po::value<int>(&__num_experiments)->default_value(1000), "number of experiments");
+            ("num_experiments", po::value<int>(&__num_experiments)->default_value(1), "number of experiments");
 
 #define END_EXPERIMENT() return 0; }
 
@@ -33,9 +34,10 @@ namespace po = boost::program_options;
 
 
 #define START_RUN() \
-    begin = std::chrono::steady_clock::now();\
+    begin = std::chrono::steady_clock::now(); \
     for (int32_t __exp_idx = 0; __exp_idx < __num_experiments; ++__exp_idx) {
 
 #define END_RUN() }\
     end = std::chrono::steady_clock::now();\
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 1e-6 / (double)__num_experiments << std::endl;
+    __duration = end - begin;\
+    std::cout << __duration.count() << std::endl;

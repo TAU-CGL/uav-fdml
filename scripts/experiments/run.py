@@ -87,16 +87,23 @@ def create_figure(
     df = pd.read_csv(_get_table_name(experiment_name))
 
     xs = df[x_col]
+    offset = 0
     for label in labels:
         if figure_type.startswith("bar"):
-            plt.bar(xs, df[label], width=options["width"], label=options["legend"][label])
+            plt.bar(xs + offset * options["width"], df[label], width=options["width"], label=options["legend"][label])
         if figure_type == "plot" or figure_type.endswith('+'):
             plt.plot(xs, df[label], 'k-')
             plt.plot(xs, df[label], 'ko')
+        offset += 1
     
     plt.xlabel(hor_label)
     plt.ylabel(ver_label)
     plt.legend()
+
+    if "xscale" in options:
+        plt.yscale(options["xscale"])
+    if "yscale" in options:
+        plt.yscale(options["yscale"])
     
     figure_name = os.path.join(_get_project_source_dir(), RESULTS_DIR, f"{experiment_name}_{figure_name}.png")
     plt.savefig(figure_name)

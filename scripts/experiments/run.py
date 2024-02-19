@@ -110,8 +110,16 @@ def create_figure(
     plt.close()
     
 
+
+## If this is None, then run all experiments
+# TEST_EXPERIMENT = None
+TEST_EXPERIMENT = "ex_kdtree_nn_omp"
+
+
 if __name__ == "__main__":
     for experiment, d in EXPERIMENTS.items():
+        if TEST_EXPERIMENT is not None and experiment != TEST_EXPERIMENT: 
+            continue
         run_experiment(experiment, d["args"], d["outputs"])
         for figure in d["figures"]:
             create_figure(experiment, 

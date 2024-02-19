@@ -1,5 +1,7 @@
 #pragma once
 
+#include <omp.h>
+
 #include <boost/container/vector.hpp>
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
@@ -39,6 +41,17 @@ namespace se3loc {
             dtype w = -1;
             nearestNeighborRecurse(q, root, p, w);
             return p;
+        }
+
+        boost::container::vector<Point<dim, dtype>> nearestNeighbor_omp(boost::container::vector<Point<dim, dtype>> qs) {
+            boost::container::vector<Point<dim, dtype>> neighbors(qs.size());
+
+            #pragma omp parallel for
+            for (int32_t idx = 0; idx < qs.size(); ++idx) {
+                Point<dim, dtype> neighbor = this->nearestNeighbor(qs[idx]);
+                neighbors[idx] = neighbor;
+            }
+            return neighbors;
         }
 
         std::string str() const {

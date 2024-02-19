@@ -4,7 +4,7 @@ project(experiments)
 find_package(fmt REQUIRED)
 find_package(Boost COMPONENTS container program_options REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/include)
-set(EXPERIMENT_LINKS fmt::fmt ${Boost_LIBRARIES})
+set(EXPERIMENT_LINKS fmt::fmt ${Boost_LIBRARIES} OpenMP::OpenMP_CXX)
 
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 set (EXPERIMENTS)

@@ -17,12 +17,40 @@ EXPERIMENTS["ex_kdtree_construct"] = {
             "ycols": ["time"],
 
             "xlabel": "# of points",
-            "ylabel": "Time [sec]",
+            "ylabel": "Time [miliseconds]",
             "options": {
                 "legend": {
-                    "time": "Construction Time [sec]"
+                    "time": "Construction Time [miliseconds]"
                 },
                 "width": 25000
+            }
+        }
+    ]
+}
+
+EXPERIMENTS["ex_kdtree_nn_omp"] = {
+    "args": {
+        "num_points": [2 ** i for i in range(1, 21)], 
+        "num_queries": [2**20 for _ in range(1, 21)],
+        "num_experiments": [1 for _ in range(1, 11)] + [1 for _ in range(11, 21)],
+    },
+    "outputs": ["serial_time", "parallel_time"],
+    "figures": [
+        {
+            "type": "bar",
+            "name": "time",
+            "xcol": "num_points",
+            "ycols": ["serial_time", "parallel_time"],
+            "xlabel": "# of points",
+            "ylabel": "Time [miliseconds]",
+            "options": {
+                "legend": {
+                    "serial_time": "Serial NN",
+                    "parallel_time": "Parallel NN [OpenMP]"
+                },
+                "width": 10000,
+                # "yscale": "log",
+                # "xscale": "log",
             }
         }
     ]
@@ -31,7 +59,7 @@ EXPERIMENTS["ex_kdtree_construct"] = {
 EXPERIMENTS["ex_kdtree_nn"] = {
     "args": {
         "num_points": [2 ** i for i in range(1, 21)], 
-        "num_queries": [1024 * 16 for _ in range(1, 21)],
+        "num_queries": [1024 * 1024 for _ in range(1, 21)],
         "num_experiments": [1 for _ in range(1, 11)] + [1 for _ in range(11, 21)],
     },
     "outputs": ["naive_time", "kdtreenn_time"],
@@ -42,7 +70,7 @@ EXPERIMENTS["ex_kdtree_nn"] = {
             "xcol": "num_points",
             "ycols": ["naive_time", "kdtreenn_time"],
             "xlabel": "# of points",
-            "ylabel": "Time [sec]",
+            "ylabel": "Time [miliseconds]",
             "options": {
                 "legend": {
                     "naive_time": "Naive NN",

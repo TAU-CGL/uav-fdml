@@ -55,15 +55,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - name: Get submodules
-      run: |
-        git submodule init
-        git submodule update --recursive
-        cd third-party/LightEngine3
-        git submodule init
-        git submodule update --recursive
-        cd ../..
+      with:
+        submodules: 'true'
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.

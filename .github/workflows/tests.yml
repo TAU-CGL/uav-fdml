@@ -34,6 +34,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Get submodules
+      run: |
+        git submodue init
+        git submodule update --recursive
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings

@@ -58,7 +58,7 @@ jobs:
 
     - name: Get submodules
       run: |
-        git submodue init
+        git submodule init
         git submodule update --recursive
 
     - name: Set reusable strings

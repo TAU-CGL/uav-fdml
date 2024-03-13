@@ -1,7 +1,26 @@
-project(demo)
+if (WITH_VISUALIZATION)
+    project(demo)
 
-find_package(fmt REQUIRED)
-find_package(Boost COMPONENTS container REQUIRED)
+    find_package(fmt REQUIRED)
+    find_package(Boost COMPONENTS container REQUIRED)
+    find_package(GLEW REQUIRED)
+    find_package(Lua REQUIRED)
+    find_package(glm CONFIG REQUIRED)
+    find_package(assimp REQUIRED)
+    include_directories(${GLEW_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 
-add_executable(demo src/main.cpp)
-target_link_libraries(demo PRIVATE fmt::fmt ${Boost_LIBRARIES})
+    include_directories(${CMAKE_SOURCE_DIR}/third-party/LightEngine3/le3/include)
+    include_directories(${PROJECT_SOURCE_DIR}/include)
+
+    if (NOT DEFINED LUA_LIBRARIES)
+        set(LUA_LIBRARIES lua::lua)
+    endif()
+
+    add_executable(${PROJECT_NAME} 
+        src/main.cpp
+        src/demo.cpp
+        src/demo_gui.cpp    
+    )
+    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} glm::glm assimp::assimp ${LUA_LIBRARIES})
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+endif()

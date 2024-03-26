@@ -42,8 +42,6 @@ namespace se3loc {
             return fmt::format("point_{}({})", dim, fmt::join(boost::span(data, data + dim), ", "));
         }
 
-
-
         static Point uniform() {
             Point p;
             for (int i = 0; i < dim; i++) 
@@ -58,10 +56,18 @@ namespace se3loc {
     template <int dim, typename dtype>
     using Vec = Point<dim, dtype>;
 
+    template <int dim, typename dtype>
+    struct Box {
+    public:
+        Point<dim, dtype> min, max;
+    };
+
     template <typename dtype>
     using Point3 = Point<3, dtype>;
     template <typename dtype>
     using Vec3 = Vec<3, dtype>;
+    template <typename dtype>
+    using Box3 = Box<3, dtype>;
 
     template <typename dtype>
     struct Triangle3 {

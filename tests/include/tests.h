@@ -5,7 +5,7 @@ using fmt::format, fmt::print;
 
 #include <gtest/gtest.h>
 
-#include <se3loc/se3loc.h>
+#include <fdml/fdml.h>
 
 
 #define TEST_MAIN() \

@@ -9,7 +9,7 @@ using fmt::format;
 
 #include "random.h"
 
-namespace se3loc {
+namespace fdml {
     template <int dim, typename dtype>
     struct Point {
     public:

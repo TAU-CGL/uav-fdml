@@ -5,7 +5,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 
-namespace se3loc {
+namespace fdml {
 
     class Random {
     public:

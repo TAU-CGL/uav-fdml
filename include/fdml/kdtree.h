@@ -11,7 +11,7 @@ using fmt::format;
 
 #include "geometry.h"
 
-namespace se3loc {
+namespace fdml {
 
     template <int dim, typename dtype>
     struct KDTreeNode {

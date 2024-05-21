@@ -1,4 +1,4 @@
-#include <se3loc/se3loc.h>
+#include <fdml/fdml.h>
 
 #include "experiment_options.h"
 
@@ -11,18 +11,18 @@ BEGIN_EXPERIMENT("KDTree Nearest Neighbor vs Naive Nearest Neighbor")
 
     PARSE_ARGS();
 
-    se3loc::Random::seed(-1);
-    boost::container::vector<se3loc::Point<DIM, double>> points, queries, results;
-    for (int32_t i = 0; i < num_points; ++i) points.push_back(se3loc::Point<DIM, double>::uniform());
-    for (int32_t i = 0; i < num_queries; ++i) queries.push_back(se3loc::Point<DIM, double>::uniform());
+    fdml::Random::seed(-1);
+    boost::container::vector<fdml::Point<DIM, double>> points, queries, results;
+    for (int32_t i = 0; i < num_points; ++i) points.push_back(fdml::Point<DIM, double>::uniform());
+    for (int32_t i = 0; i < num_queries; ++i) queries.push_back(fdml::Point<DIM, double>::uniform());
 
-    se3loc::KDTree<DIM, double> kdtree;
+    fdml::KDTree<DIM, double> kdtree;
     kdtree.fit(points);
 
     // Start with serial NN 
     START_RUN()
         for (auto q : queries) {
-            se3loc::Point<DIM, double> neighbor = kdtree.nearestNeighbor(q);
+            fdml::Point<DIM, double> neighbor = kdtree.nearestNeighbor(q);
             results.push_back(neighbor);
         }
     END_RUN() // Prints time for serial nn ( x num_queries)

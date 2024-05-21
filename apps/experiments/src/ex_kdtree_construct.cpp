@@ -1,4 +1,4 @@
-#include <se3loc/se3loc.h>
+#include <fdml/fdml.h>
 
 #include "experiment_options.h"
 
@@ -10,11 +10,11 @@ BEGIN_EXPERIMENT("KDTree construction time experiment")
     PARSE_ARGS();
 
     START_RUN()
-        se3loc::Random::seed(-1);
-        boost::container::vector<se3loc::Point<3, double>> points;
-        for (int32_t i = 0; i < num_points; ++i) points.push_back(se3loc::Point<3, double>::uniform());
+        fdml::Random::seed(-1);
+        boost::container::vector<fdml::Point<3, double>> points;
+        for (int32_t i = 0; i < num_points; ++i) points.push_back(fdml::Point<3, double>::uniform());
 
-        se3loc::KDTree<3, double> kdtree;
+        fdml::KDTree<3, double> kdtree;
         kdtree.fit(points);
     END_RUN()
     

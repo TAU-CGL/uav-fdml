@@ -13,7 +13,4 @@ public:
 protected:
     DemoObject demoObj;
     void updateGeometry();
-
-    // Display properties
-    float pointSize = 3.f;
 };

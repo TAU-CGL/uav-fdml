@@ -61,18 +61,31 @@ enable_testing()
 add_subdirectory(tests)
 
 # Copy the resources directory to the build
+# if (WIN32)
+# add_custom_target(
+#     copy_resources ALL
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#         ${CMAKE_CURRENT_SOURCE_DIR}/resources
+#         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/resources
+# )
+# else()
+# add_custom_target(
+#     copy_resources ALL
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#         ${CMAKE_CURRENT_SOURCE_DIR}/resources
+#         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
+# )
+# endif()
+
+
+
 if (WIN32)
-add_custom_target(
-    copy_resources ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/resources
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/resources
-)
 else()
-add_custom_target(
-    copy_resources ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/resources
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
-)
+    add_custom_target(
+        pkg-resources-tgt-fdml ALL
+        COMMAND 
+            ${CMAKE_SOURCE_DIR}/third-party/LightEngine3/bin/pkg-resources ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_SOURCE_DIR}/bin
+
+        DEPENDS ${CMAKE_SOURCE_DIR}/third-party/LightEngine3/bin/pkg-resources
+    )
 endif()

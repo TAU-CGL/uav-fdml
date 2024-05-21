@@ -54,6 +54,8 @@ if(APPLE)
     include_directories("/opt/homebrew/opt/libomp/include")
     link_directories("/opt/homebrew/opt/libomp/lib")
 endif()
+
+find_package(CGAL REQUIRED)
 ############################################################
 
 add_subdirectory(apps)
@@ -61,24 +63,6 @@ enable_testing()
 add_subdirectory(tests)
 
 # Copy the resources directory to the build
-# if (WIN32)
-# add_custom_target(
-#     copy_resources ALL
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#         ${CMAKE_CURRENT_SOURCE_DIR}/resources
-#         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/resources
-# )
-# else()
-# add_custom_target(
-#     copy_resources ALL
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#         ${CMAKE_CURRENT_SOURCE_DIR}/resources
-#         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
-# )
-# endif()
-
-
-
 if (WIN32)
 else()
     add_custom_target(

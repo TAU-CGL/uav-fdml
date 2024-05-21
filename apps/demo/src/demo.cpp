@@ -4,21 +4,38 @@ void DemoGUI::init() {
     LE3SimpleDemo::init();
 
     LE3GetDatFileSystem().addArchive("fdml", "fdml.dat");
+    m_scene.load("/fdml/demo_scene.lua");
 
-    LE3GetAssetManager().getMaterial("M_default")->specularIntensity = 0.f;
-    // m_scene.addBox("floor", "M_default", glm::vec3(0.f, -1.1f, 0.f), glm::vec3(50.f, 0.1f, 50.f));
+    m_scene.getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
+    m_scene.getMainCamera()->setPitchYaw(0.f, -1.57f);
 
-    LE3GetAssetManager().addStaticMesh("240521-141038", "/fdml/scans/240521-141038/240521-141038-scaled.obj");
-    LE3GetAssetManager().addTexture("240521-141038", "/fdml/scans/240521-141038/240521-141038.jpg");
-    LE3GetAssetManager().addMaterial("M_room", "S_default");
-    LE3GetAssetManager().getMaterial("M_room")->diffuseTexture = LE3GetAssetManager().getTexture("240521-141038");
-    LE3GetAssetManager().getMaterial("M_room")->bUseDiffuseTexture = true;
-    m_scene.addStaticModel("room", "240521-141038", "M_room");
-
-    m_scene.addAmbientLight("ambientLight");
-    m_scene.getObject<LE3AmbientLight>("ambientLight")->setIntensity(0.8);
+    buildAABBTree();
 }
 
 void DemoGUI::update(float deltaTime) {
     LE3SimpleDemo::update(deltaTime);
+}
+
+void DemoGUI::buildAABBTree() {
+    auto mesh = LE3GetAssetManager().getStaticMesh("SM_room");
+    auto vertices = mesh->getKeptData();
+    auto indices = mesh->getKeptIndices();
+
+    std::chrono::steady_clock::time_point begin, end;
+    std::list<Triangle> triangles;
+    
+    std::chrono::duration<double, std::milli> __duration;
+    begin = std::chrono::steady_clock::now();
+    
+    for (int i = 0; i < indices.size(); i += 3) {
+        Point p1(vertices[indices[i]].position[0], vertices[indices[i]].position[1], vertices[indices[i]].position[2]);
+        Point p2(vertices[indices[i + 1]].position[0], vertices[indices[i + 1]].position[1], vertices[indices[i + 1]].position[2]);
+        Point p3(vertices[indices[i + 2]].position[0], vertices[indices[i + 2]].position[1], vertices[indices[i + 2]].position[2]);
+        Triangle t(p1, p2, p3);
+        triangles.push_back(t);
+    }
+    tree = AABBTree(triangles.begin(), triangles.end());
+    end = std::chrono::steady_clock::now();
+    __duration = end - begin;
+    print("Constructing AABB tree: {} [sec]", __duration.count());
 }

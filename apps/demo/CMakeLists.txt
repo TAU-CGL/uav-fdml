@@ -7,6 +7,7 @@ if (WITH_VISUALIZATION)
     find_package(Lua REQUIRED)
     find_package(glm CONFIG REQUIRED)
     find_package(assimp REQUIRED)
+    find_package(CGAL REQUIRED)
     include_directories(${GLEW_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 
     include_directories(${CMAKE_SOURCE_DIR}/third-party/LightEngine3/le3/include)
@@ -20,6 +21,6 @@ if (WITH_VISUALIZATION)
         src/main.cpp
         src/demo.cpp
     )
-    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} glm::glm assimp::assimp ${LUA_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} glm::glm assimp::assimp ${LUA_LIBRARIES} CGAL::CGAL)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 endif()

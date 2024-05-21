@@ -19,7 +19,6 @@ if (WITH_VISUALIZATION)
     add_executable(${PROJECT_NAME} 
         src/main.cpp
         src/demo.cpp
-        src/demo_gui.cpp    
     )
     target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} glm::glm assimp::assimp ${LUA_LIBRARIES})
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)

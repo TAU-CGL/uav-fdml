@@ -3,9 +3,12 @@
 #include <le3.h>
 using namespace le3;
 
-#include <fdml/fdml.h>
+#include "demo.h"
 
-class DemoObject {
-public:
-    DemoObject();
+class DemoGUI : public LE3SimpleDemo {
+public:   
+    void init();
+    void update(float deltaTime);
+
+protected:
 };

@@ -5,7 +5,7 @@ using fmt::print, fmt::format;
 
 #include <fdml/fdml.h>
 
-#include "demo_gui.h"
+#include "demo.h"
 
 int main() {
     fdml::Random::seed(0);

@@ -3,8 +3,6 @@
 #include <fmt/core.h>
 using fmt::print, fmt::format;
 
-#include <fdml/fdml.h>
-
 #include "demo.h"
 
 int main() {

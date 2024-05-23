@@ -14,12 +14,22 @@ Scene.Materials = {
         DiffuseTexture = "T_room",
         Shininess = 128
     },
+    {
+        Name = "M_cursor",
+        ShaderName = "S_default",
+        DiffuseColor = {33/255, 114/255, 41/255, 0.8},
+    }
 
 }
 Scene.StaticMeshes = {
     {
         Name = "SM_room",
         Path = "/fdml/scans/240521-141038/240521-141038-scaled.obj",
+        KeepData = true
+    },
+    {
+        Name = "SM_cursor",
+        Path = "/fdml/cursor.obj",
         KeepData = true
     }
 }
@@ -30,7 +40,7 @@ Scene.Objects = {
     {
         Type = "AmbientLight",
         Name = "ambientLight",
-        Intensity = 0.5,
+        Intensity = 0.8,
         Color = {1, 0.9, 0.9}
     },
     {
@@ -38,7 +48,7 @@ Scene.Objects = {
         Name = "room",
         MeshName = "SM_room",
         MaterialName = "M_room",
-    }
+    },
 }
 
 Scene.ObjectRelations = {

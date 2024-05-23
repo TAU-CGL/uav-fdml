@@ -13,9 +13,14 @@ using namespace le3;
 class DemoGUI : public LE3SimpleDemo {
 public:   
     void init();
-    void update(float deltaTime);
+    void renderDebug();
 
     void buildAABBTree();
+    void addConfiguration(fdml::R3xS1 q);
+
 protected:
     AABBTree tree;
+    
+    std::vector<fdml::R3xS1> configurations;
+    std::list<Triangle> triangles;
 };

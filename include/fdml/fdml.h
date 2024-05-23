@@ -38,12 +38,12 @@ namespace fdml {
         }
 
         double measureDistance(AABBTree& room) {
-            Point down(this->position.x(), this->position.y() - 1, this->position.z());
+            Point down(this->position.x(), this->position.y(), this->position.z() - 1.0);
             Ray ray(this->position, down);
             auto result = room.first_intersection(ray);
             if (!result.has_value()) { return -1; }
             const Point* p = boost::get<Point>(&(result->first));
-            return sqrt(CGAL::to_double(CGAL::squared_distance(this->position, *p)));
+            return sqrt(CGAL::squared_distance(this->position, *p));
         }
     };
 

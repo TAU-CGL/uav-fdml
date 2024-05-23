@@ -25,20 +25,24 @@ void DemoGUI::init() {
     buildAABBTree();
     addConfiguration(fdml::R3xS1(Point(0, 0.2, 0.3), 0));
     addConfiguration(fdml::R3xS1(Point(0, 0.3, 0.5), 0));
+    addConfiguration(fdml::R3xS1(Point(0.7, 0.1, 0.2), 0));
+
+    // TODO: Add gizmo to bottom left (for clatiry)
 
     fflush(stdout);
 }
 
 void DemoGUI::renderDebug() {
+    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     for (auto q : configurations) {
         double distance = q.measureDistance(tree);
+        glm::vec3 pos(q.position.x(), q.position.z(), q.position.y());
         LE3GetVisualDebug().drawDebugLine(
-            glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.y()), CGAL::to_double(q.position.z())),
-            glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.y()) - distance, CGAL::to_double(q.position.z())),
+            pos, pos - glm::vec3(0.f, distance, 0.f),
             glm::vec3(1.f, 0.f, 1.f)
         );
         LE3GetVisualDebug().drawDebugBox(
-            glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.y()) - distance, CGAL::to_double(q.position.z())),
+            pos - glm::vec3(0.f, distance, 0.f),
             glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(1.f, 0.f, 1.f));
         
     }
@@ -56,10 +60,11 @@ void DemoGUI::buildAABBTree() {
     begin = std::chrono::steady_clock::now();
     K k;
     
+    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     for (int i = 0; i < indices.size(); i += 3) {
-        Point p1(vertices[indices[i]].position[0], vertices[indices[i]].position[1], vertices[indices[i]].position[2]);
-        Point p2(vertices[indices[i + 1]].position[0], vertices[indices[i + 1]].position[1], vertices[indices[i + 1]].position[2]);
-        Point p3(vertices[indices[i + 2]].position[0], vertices[indices[i + 2]].position[1], vertices[indices[i + 2]].position[2]);
+        Point p1(vertices[indices[i]].position[0], vertices[indices[i]].position[2], vertices[indices[i]].position[1]);
+        Point p2(vertices[indices[i + 1]].position[0], vertices[indices[i + 1]].position[2], vertices[indices[i + 1]].position[1]);
+        Point p3(vertices[indices[i + 2]].position[0], vertices[indices[i + 2]].position[2], vertices[indices[i + 2]].position[1]);
         Triangle t(p1, p2, p3);
         triangles.push_back(t);
     }
@@ -73,5 +78,6 @@ void DemoGUI::addConfiguration(fdml::R3xS1 q) {
     configurations.push_back(q);
     std::string markerName = format("__marker_{}", configurations.size());
     m_scene.addStaticModel(markerName, "SM_cursor", "M_cursor");
-    m_scene.getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.y()), CGAL::to_double(q.position.z())));
+    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
+    m_scene.getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 }

@@ -17,7 +17,7 @@ Scene.Materials = {
         Name = "M_room",
         ShaderName = "S_default",
         DiffuseTexture = "T_room",
-        Shininess = 128
+        Shininess = 1024
     },
     {
         Name = "M_cursor",
@@ -49,7 +49,7 @@ Scene.Objects = {
     {
         Type = "AmbientLight",
         Name = "ambientLight",
-        Intensity = 0.8,
+        Intensity = 0.7,
         Color = {1, 0.9, 0.9}
     },
     {

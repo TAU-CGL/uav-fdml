@@ -1,5 +1,10 @@
 Scene = {}
 Scene.Shaders = {
+    {
+        Name = "S_custom_gizmo",
+        VertexSource = "/fdml/shaders/custom_gizmo.vs",
+        FragmentSource = "/fdml/shaders/custom_gizmo.fs"
+    }
 }
 Scene.Textures = {
     {
@@ -18,6 +23,10 @@ Scene.Materials = {
         Name = "M_cursor",
         ShaderName = "S_default",
         DiffuseColor = {33/255, 114/255, 41/255, 0.8},
+    },
+    {
+        Name = "M_custom_gizmo",
+        ShaderName = "S_custom_gizmo",
     }
 
 }

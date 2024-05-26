@@ -14,6 +14,7 @@ class DemoGUI : public LE3SimpleDemo {
 public:   
     void init();
     void renderDebug();
+    void update(float deltaTime);
 
     void buildAABBTree();
     void addConfiguration(fdml::R3xS1 q);

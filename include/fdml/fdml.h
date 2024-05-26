@@ -31,9 +31,10 @@ namespace fdml {
 
         R3xS1 operator*(const R3xS1& other) {
             FT newOrientation = orientation + other.orientation;
-            FT x = position.x(); //+ cos(orientation) * other.position.x() - sin(orientation) * other.position.y();
-            Point newPosition;
-
+            FT x = position.x() + other.position.x() * cos(orientation) - other.position.y() * sin(orientation);
+            FT y = position.y() + other.position.x() * sin(orientation) + other.position.y() * cos(orientation);
+            FT z = position.z() + other.position.z();
+            Point newPosition(x, y, z);
             return R3xS1(newPosition, newOrientation);
         }
 
@@ -46,6 +47,8 @@ namespace fdml {
             return sqrt(CGAL::squared_distance(this->position, *p));
         }
     };
+    using OdometrySequence = std::vector<R3xS1>;
+    using MeasurementSequence = std::vector<double>;
 
     
 }

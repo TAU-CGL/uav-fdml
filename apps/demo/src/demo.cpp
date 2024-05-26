@@ -17,19 +17,37 @@ void DemoGUI::init() {
     LE3SimpleDemo::init();
 
     LE3GetDatFileSystem().addArchive("fdml", "fdml.dat");
-    m_scene.load("/fdml/demo_scene.lua");
+    LE3GetSceneManager().getActiveScene()->load("/fdml/demo_scene.lua");
 
-    m_scene.getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
-    m_scene.getMainCamera()->setPitchYaw(0.f, -1.57f);
+    LE3GetSceneManager().getActiveScene()->getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
+    LE3GetSceneManager().getActiveScene()->getMainCamera()->setPitchYaw(0.f, -1.57f);
 
     buildAABBTree();
     addConfiguration(fdml::R3xS1(Point(0, 0.2, 0.3), 0));
     addConfiguration(fdml::R3xS1(Point(0, 0.3, 0.5), 0));
     addConfiguration(fdml::R3xS1(Point(0.7, 0.1, 0.2), 0));
 
-    // TODO: Add gizmo to bottom left (for clatiry)
+    // Add gizmo to bottom left (for clatiry)
+    LE3GetSceneManager().getActiveScene()->addCustomObject("gizmo", std::make_shared<LE3Gizmo>());
+    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setHoverable(false);
+    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setDynamicScale(false);
+    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
+    LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
 
     fflush(stdout);
+}
+
+void DemoGUI::update(float deltaTime) {
+    
+    LE3SimpleDemo::update(deltaTime);
+
+    glm::vec3 cameraPos = LE3GetActiveScene()->getMainCamera()->getPosition();
+    glm::vec3 cameraForward = LE3GetActiveScene()->getMainCamera()->getForward();
+    glm::vec3 cameraRight = LE3GetActiveScene()->getMainCamera()->getRight();
+    glm::vec3 cameraUp = LE3GetActiveScene()->getMainCamera()->getUp();
+    glm::vec3 gizmoPosition = cameraPos + cameraForward * 0.5f + cameraRight * 0.0f + cameraUp * 0.0f;
+    // LE3GetSceneManager().getActiveScene()->getObject("gizmo")->getTransform().setPosition(cameraPos + glm::vec3(0.5f, 0.f, 0.f));
+
 }
 
 void DemoGUI::renderDebug() {
@@ -58,7 +76,6 @@ void DemoGUI::buildAABBTree() {
     
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
-    K k;
     
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     for (int i = 0; i < indices.size(); i += 3) {
@@ -77,7 +94,7 @@ void DemoGUI::buildAABBTree() {
 void DemoGUI::addConfiguration(fdml::R3xS1 q) {
     configurations.push_back(q);
     std::string markerName = format("__marker_{}", configurations.size());
-    m_scene.addStaticModel(markerName, "SM_cursor", "M_cursor");
+    LE3GetSceneManager().getActiveScene()->addStaticModel(markerName, "SM_cursor", "M_cursor");
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
-    m_scene.getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
+    LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 }

@@ -27,6 +27,11 @@ Scene.Materials = {
     {
         Name = "M_custom_gizmo",
         ShaderName = "S_custom_gizmo",
+    },
+    {
+        Name = "M_localization",
+        ShaderName = "S_default",
+        DiffuseColor = {0.0, 1.0, 1.0, 1.0}
     }
 
 }

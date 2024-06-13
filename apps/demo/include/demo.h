@@ -21,7 +21,16 @@ public:
 
 protected:
     AABBTree tree;
+    fdml::R3xS1_Voxel boundingBox;
     
     std::vector<fdml::R3xS1> configurations;
     std::list<Triangle> triangles;
+
+    fdml::OdometrySequence odometrySequence;
+    fdml::OdometrySequence tildeOdometries;
+    fdml::MeasurementSequence measurements;
+    std::vector<fdml::R3xS1_Voxel> localization;
+
+    void updateBoundingBox(Point pt);
+    void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
 };

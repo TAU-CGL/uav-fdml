@@ -18,6 +18,7 @@ using Ray = K::Ray_3;
 using Line = K::Line_3;
 using Point = K::Point_3;
 using Vector = K::Vector_3;
+using Box = K::Iso_cuboid_3;
 using Triangle = K::Triangle_3;
 using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primitive<K, std::list<Triangle>::iterator>>>;
 
@@ -49,6 +50,75 @@ namespace fdml {
     };
     using OdometrySequence = std::vector<R3xS1>;
     using MeasurementSequence = std::vector<double>;
+
+    struct R3xS1_Voxel {
+    public:
+        Point bottomLeftPosition, topRightPosition;
+        FT bottomLeftRotation, topRightRotation;
+
+        static std::vector<R3xS1_Voxel> splitVoxels(std::vector<R3xS1_Voxel>& in) {
+            std::vector<R3xS1_Voxel> out;
+            for (auto& v : in) v.split(out);
+            return out;
+        }
+        void split(std::vector<R3xS1_Voxel>& out) {
+            std::vector<R3xS1_Voxel> temp, temp2;
+            this->splitSingleAxis(temp, SplitAxis::SPLIT_X);
+            for (auto& v : temp) v.splitSingleAxis(temp2, SplitAxis::SPLIT_Y); temp.clear();
+            for (auto& v : temp2) v.splitSingleAxis(temp, SplitAxis::SPLIT_Z); temp2.clear();
+            for (auto& v: temp) v.splitSingleAxis(out, SplitAxis::SPLIT_R);
+        }
+
+        // Apply the g_tilde offset to the voxel as described in the paper
+        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement) {
+            FT r = sqrt(g_tilde.position.x() * g_tilde.position.x() + g_tilde.position.y() * g_tilde.position.y());
+            r = 0;
+            R3xS1_Voxel newVoxel;
+            newVoxel.bottomLeftPosition = Point(
+                bottomLeftPosition.x() + g_tilde.position.x() - r, bottomLeftPosition.y() + g_tilde.position.y() - r, bottomLeftPosition.z() + g_tilde.position.z() - measurement
+            );
+            newVoxel.topRightPosition = Point(
+                topRightPosition.x() + g_tilde.position.x() + r, topRightPosition.y() + g_tilde.position.y() + r, topRightPosition.z() + g_tilde.position.z() - measurement
+            );
+            newVoxel.bottomLeftRotation = bottomLeftRotation + g_tilde.orientation;
+            newVoxel.topRightRotation = topRightRotation + g_tilde.orientation;
+            return newVoxel;
+        }
+
+        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env) {
+            R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement);
+            Box query(newVoxel.bottomLeftPosition, newVoxel.topRightPosition);
+            return env.do_intersect(query);
+        }
+
+    private:
+        enum class SplitAxis { SPLIT_X, SPLIT_Y, SPLIT_Z, SPLIT_R };
+        void splitSingleAxis(std::vector<R3xS1_Voxel>& out, SplitAxis axis) {
+            R3xS1_Voxel left = *this, right = *this;
+            switch(axis) {
+                case SplitAxis::SPLIT_X:
+                    left.topRightPosition = Point((bottomLeftPosition.x() + topRightPosition.x()) / 2, topRightPosition.y(), topRightPosition.z());
+                    right.bottomLeftPosition = Point((bottomLeftPosition.x() + topRightPosition.x()) / 2, bottomLeftPosition.y(), bottomLeftPosition.z());
+                    break;
+                case SplitAxis::SPLIT_Y:
+                    left.topRightPosition = Point(topRightPosition.x(), (bottomLeftPosition.y() + topRightPosition.y()) / 2, topRightPosition.z());
+                    right.bottomLeftPosition = Point(bottomLeftPosition.x(), (bottomLeftPosition.y() + topRightPosition.y()) / 2, bottomLeftPosition.z());
+                    break;
+                case SplitAxis::SPLIT_Z:
+                    left.topRightPosition = Point(topRightPosition.x(), topRightPosition.y(), (bottomLeftPosition.z() + topRightPosition.z()) / 2);
+                    right.bottomLeftPosition = Point(bottomLeftPosition.x(), bottomLeftPosition.y(), (bottomLeftPosition.z() + topRightPosition.z()) / 2);
+                    break;
+                case SplitAxis::SPLIT_R:
+                    left.topRightRotation = (bottomLeftRotation + topRightRotation) / 2;
+                    right.bottomLeftRotation = (bottomLeftRotation + topRightRotation) / 2;
+                    break;
+            }
+            out.push_back(left);
+            out.push_back(right);
+        }
+        
+    };
+
 
     
 }

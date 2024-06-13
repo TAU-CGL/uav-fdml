@@ -32,10 +32,11 @@ void DemoGUI::init() {
     /// -------------------------------
     fdml::R3xS1 q0(Point(0, 0.2, 0.3), 0);
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
-    odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 0.));
-    odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), 0.));
-    odometrySequence.push_back(fdml::R3xS1(Point(-2.0, -1.0, -0.3), 0));
-    odometrySequence.push_back(fdml::R3xS1(Point(1.5, 0.0, 0.6), 0.0));
+    odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 0.1));
+    odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), 0.2));
+    odometrySequence.push_back(fdml::R3xS1(Point(-2.0, -1.0, -0.3), 0.1));
+    odometrySequence.push_back(fdml::R3xS1(Point(1.5, 0.0, 0.6), 0.1));
+    odometrySequence.push_back(fdml::R3xS1(Point(0.5, 0.5, 0.01), 0.1));
 
     fdml::OdometrySequence groundTruths;
     bool first = true;
@@ -156,14 +157,14 @@ void DemoGUI::renderDebug() {
         debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
     }
 
-    fdml::R3xS1_Voxel v_gt;
-    v_gt.bottomLeftPosition = Point(0 - 0.1, 0.2 - 0.1, 0.3 - 0.1);
-    v_gt.topRightPosition = Point(0 + 0.1, 0.2 + 0.1, 0.3 + 0.1);
-    v_gt.bottomLeftRotation = 0.0; v_gt.topRightRotation = 2.0 * M_PI;
-    // debugDrawVoxel(v_gt, glm::vec3(0.f, 1.f, 1.f));
-    for (int j = 0; j < tildeOdometries.size(); j++) {
-        debugDrawVoxel(v_gt.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
-    }
+    // fdml::R3xS1_Voxel v_gt;
+    // v_gt.bottomLeftPosition = Point(0 - 0.1, 0.2 - 0.1, 0.3 - 0.1);
+    // v_gt.topRightPosition = Point(0 + 0.1, 0.2 + 0.1, 0.3 + 0.1);
+    // v_gt.bottomLeftRotation = 0.0; v_gt.topRightRotation = 2.0 * M_PI;
+    // // debugDrawVoxel(v_gt, glm::vec3(0.f, 1.f, 1.f));
+    // for (int j = 0; j < tildeOdometries.size(); j++) {
+    //     debugDrawVoxel(v_gt.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
+    // }
 }
 
 void DemoGUI::buildAABBTree() {

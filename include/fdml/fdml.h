@@ -4,15 +4,15 @@
 #include "random.h"
 // #include "geometry.h"
 
-// #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <boost/numeric/interval.hpp>
+using Interval = boost::numeric::interval<double, boost::numeric::interval_lib::policies<boost::numeric::interval_lib::save_state<boost::numeric::interval_lib::rounded_transc_std<double>>, boost::numeric::interval_lib::checking_base<double>>>;
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_triangle_primitive.h>
 
-// using K = CGAL::Exact_predicates_exact_constructions_kernel;
 using K = CGAL::Simple_cartesian<double>;
-
 using FT = K::FT;
 using Ray = K::Ray_3;
 using Line = K::Line_3;
@@ -21,6 +21,7 @@ using Vector = K::Vector_3;
 using Box = K::Iso_cuboid_3;
 using Triangle = K::Triangle_3;
 using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primitive<K, std::list<Triangle>::iterator>>>;
+
 
 namespace fdml {
     struct R3xS1 {
@@ -71,14 +72,21 @@ namespace fdml {
 
         // Apply the g_tilde offset to the voxel as described in the paper
         R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement) {
-            FT r = sqrt(g_tilde.position.x() * g_tilde.position.x() + g_tilde.position.y() * g_tilde.position.y());
-            r = 0;
+            Interval xInterval(bottomLeftPosition.x(), topRightPosition.x());
+            Interval yInterval(bottomLeftPosition.y(), topRightPosition.y());
+            Interval zInterval(bottomLeftPosition.z(), topRightPosition.z());
+            Interval rInterval(bottomLeftRotation, topRightRotation);
+
+            xInterval = xInterval + g_tilde.position.x() * boost::numeric::cos(rInterval) - g_tilde.position.y() * boost::numeric::sin(rInterval);
+            yInterval = yInterval + g_tilde.position.x() * boost::numeric::sin(rInterval) + g_tilde.position.y() * boost::numeric::cos(rInterval);
+            zInterval = zInterval + g_tilde.position.z() - measurement;
+            
             R3xS1_Voxel newVoxel;
             newVoxel.bottomLeftPosition = Point(
-                bottomLeftPosition.x() + g_tilde.position.x() - r, bottomLeftPosition.y() + g_tilde.position.y() - r, bottomLeftPosition.z() + g_tilde.position.z() - measurement
+                boost::numeric::lower(xInterval), boost::numeric::lower(yInterval), boost::numeric::lower(zInterval)
             );
             newVoxel.topRightPosition = Point(
-                topRightPosition.x() + g_tilde.position.x() + r, topRightPosition.y() + g_tilde.position.y() + r, topRightPosition.z() + g_tilde.position.z() - measurement
+                boost::numeric::upper(xInterval), boost::numeric::upper(yInterval), boost::numeric::upper(zInterval)
             );
             newVoxel.bottomLeftRotation = bottomLeftRotation + g_tilde.orientation;
             newVoxel.topRightRotation = topRightRotation + g_tilde.orientation;

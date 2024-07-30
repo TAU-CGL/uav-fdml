@@ -32,8 +32,8 @@ void DemoGUI::init() {
     /// -------------------------------
     fdml::R3xS1 q0(Point(0, 0.2, 0.3), 0);
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
-    odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 0.1));
-    odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), 0.2));
+    odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 3.14159265));
+    odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), -1.57));
     odometrySequence.push_back(fdml::R3xS1(Point(-2.0, -1.0, -0.3), 0.1));
     odometrySequence.push_back(fdml::R3xS1(Point(1.5, 0.0, 0.6), 0.1));
     odometrySequence.push_back(fdml::R3xS1(Point(0.5, 0.5, 0.01), 0.1));
@@ -78,7 +78,7 @@ void DemoGUI::init() {
         );
     }
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 10; i++) {
         localization.clear();
         for (auto v : voxels) {
             // if (i > 3 && tree.do_intersect(Box(v.bottomLeftPosition, v.topRightPosition))) {
@@ -198,6 +198,7 @@ void DemoGUI::addConfiguration(fdml::R3xS1 q) {
     std::string markerName = format("__marker_{}", configurations.size());
     LE3GetSceneManager().getActiveScene()->addStaticModel(markerName, "SM_cursor", "M_cursor");
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
+    LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 }
 

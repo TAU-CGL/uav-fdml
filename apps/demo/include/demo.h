@@ -1,9 +1,11 @@
 #pragma once
 
+
 #include <chrono>
 #include <fmt/core.h>
 using fmt::format, fmt::print;
 
+#define GLM_ENABLE_EXPERIMENTAL 1
 #include <le3.h>
 using namespace le3;
 

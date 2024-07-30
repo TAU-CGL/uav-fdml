@@ -2,6 +2,7 @@
 
 #include <variant>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>

@@ -112,8 +112,7 @@ def create_figure(
 
 
 ## If this is None, then run all experiments
-# TEST_EXPERIMENT = None
-TEST_EXPERIMENT = "ex_kdtree_nn_omp"
+TEST_EXPERIMENT = None
 
 
 if __name__ == "__main__":
@@ -123,5 +122,5 @@ if __name__ == "__main__":
         run_experiment(experiment, d["args"], d["outputs"])
         for figure in d["figures"]:
             create_figure(experiment, 
-                          figure["type"], figure["name"], figure["xcol"], figure["ycols"], 
-                          figure["xlabel"], figure["ylabel"], figure["options"])
+                        figure["type"], figure["name"], figure["xcol"], figure["ycols"], 
+                        figure["xlabel"], figure["ylabel"], figure["options"])

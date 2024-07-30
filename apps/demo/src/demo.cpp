@@ -32,72 +32,31 @@ void DemoGUI::init() {
     /// -------------------------------
     fdml::R3xS1 q0(Point(0, 0.2, 0.3), 0);
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
-    odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 3.14159265));
-    odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), -1.57));
-    odometrySequence.push_back(fdml::R3xS1(Point(-2.0, -1.0, -0.3), 0.1));
-    odometrySequence.push_back(fdml::R3xS1(Point(1.5, 0.0, 0.6), 0.1));
-    odometrySequence.push_back(fdml::R3xS1(Point(0.5, 0.5, 0.01), 0.1));
 
-    fdml::OdometrySequence groundTruths;
-    bool first = true;
-    for (auto g : odometrySequence) {
-        if (first) {
-            groundTruths.push_back(g * q0);
-            tildeOdometries.push_back(g);
-            first = false;
-        }
-        else {
-            groundTruths.push_back(g * groundTruths.back());
-            tildeOdometries.push_back(g * tildeOdometries.back());
-        }
+    for (int i = 0; i < 5; i++) {
+        FT x = fdml::Random::randomDouble() * 3 - 1.5;
+        FT y = fdml::Random::randomDouble() * 3 - 1.5;
+        FT z = fdml::Random::randomDouble() * 1.4 - 1.4;
+        FT r = fdml::Random::randomDouble() * 2 * M_PI;
+        odometrySequence.push_back(fdml::R3xS1(Point(x, y, z), r));
     }
 
+    // odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 3.14159265));
+    // odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), -1.57));
+    // odometrySequence.push_back(fdml::R3xS1(Point(-2.0, -1.0, -0.3), 0.1));
+    // odometrySequence.push_back(fdml::R3xS1(Point(1.5, 0.0, 0.6), 0.1));
+    // odometrySequence.push_back(fdml::R3xS1(Point(0.5, 0.5, 0.01), 0.1));
+
+    fdml::OdometrySequence groundTruths = fdml::getGroundTruths(odometrySequence, q0);
     buildAABBTree();
-
-    for (auto q : groundTruths) {
-        measurements.push_back(q.measureDistance(tree));
-    }
-
+    measurements = fdml::getMeasurementSequence(tree, groundTruths);
 
     // Do localization
     std::chrono::steady_clock::time_point begin, end;    
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
-    std::vector<fdml::R3xS1_Voxel> voxels;
-    fdml::R3xS1_Voxel v1 = boundingBox, v2 = boundingBox, v3 = boundingBox, v4 = boundingBox;
-    v1.bottomLeftRotation = 0.0; v1.topRightRotation = M_PI / 2.0;
-    v2.bottomLeftRotation = M_PI / 2.0; v2.topRightRotation = M_PI;
-    v3.bottomLeftRotation = M_PI; v3.topRightRotation = 3.0 * M_PI / 2.0;
-    v4.bottomLeftRotation = 3.0 * M_PI / 2.0; v4.topRightRotation = 2.0 * M_PI;
-    voxels.push_back(v1); voxels.push_back(v2); voxels.push_back(v3); voxels.push_back(v4);
-
-    for (int j = 0; j < tildeOdometries.size(); ++j) {
-        fmt::print("j: {}| [{}, {}, {}] {}m\n", 
-            j, tildeOdometries[j].position.x(), tildeOdometries[j].position.y(), tildeOdometries[j].position.z(), measurements[j]
-        );
-    }
-
-    for (int i = 0; i < 10; i++) {
-        localization.clear();
-        for (auto v : voxels) {
-            // if (i > 3 && tree.do_intersect(Box(v.bottomLeftPosition, v.topRightPosition))) {
-            //     continue;
-            // }
-            bool flag = true;
-            for (int j = 0; j < tildeOdometries.size(); ++j) {
-                if (!v.predicate(tildeOdometries[j], measurements[j], tree)) {
-                    flag = false;
-                    break;
-                }
-            }
-            if (flag) localization.push_back(v);
-        }
-        fmt::print("localization size: {}\n", localization.size());
-
-        voxels.clear();
-        for (auto v : localization) v.split(voxels);
-    }
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 8);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
@@ -109,7 +68,6 @@ void DemoGUI::init() {
         LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->addPoint(
             glm::vec3(v.bottomLeftPosition.x(), v.bottomLeftPosition.z(), v.bottomLeftPosition.y())
         );
-        // fmt::print("{} {} {}\n", v.bottomLeftPosition.x(), v.bottomLeftPosition.z(), v.bottomLeftPosition.y());
     }
     LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->create();
     LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->setPointSize(10.f);
@@ -156,15 +114,6 @@ void DemoGUI::renderDebug() {
     for (int j = 0; j < tildeOdometries.size(); j++) {
         debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
     }
-
-    // fdml::R3xS1_Voxel v_gt;
-    // v_gt.bottomLeftPosition = Point(0 - 0.1, 0.2 - 0.1, 0.3 - 0.1);
-    // v_gt.topRightPosition = Point(0 + 0.1, 0.2 + 0.1, 0.3 + 0.1);
-    // v_gt.bottomLeftRotation = 0.0; v_gt.topRightRotation = 2.0 * M_PI;
-    // // debugDrawVoxel(v_gt, glm::vec3(0.f, 1.f, 1.f));
-    // for (int j = 0; j < tildeOdometries.size(); j++) {
-    //     debugDrawVoxel(v_gt.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
-    // }
 }
 
 void DemoGUI::buildAABBTree() {
@@ -209,6 +158,9 @@ void DemoGUI::updateBoundingBox(Point pt) {
     if (pt.x() > boundingBox.topRightPosition.x()) boundingBox.topRightPosition = Point(pt.x(), boundingBox.topRightPosition.y(), boundingBox.topRightPosition.z());
     if (pt.y() > boundingBox.topRightPosition.y()) boundingBox.topRightPosition = Point(boundingBox.topRightPosition.x(), pt.y(), boundingBox.topRightPosition.z());
     if (pt.z() > boundingBox.topRightPosition.z()) boundingBox.topRightPosition = Point(boundingBox.topRightPosition.x(), boundingBox.topRightPosition.y(), pt.z());
+
+    boundingBox.bottomLeftRotation = 0.0f;
+    boundingBox.topRightRotation = 2.0f * M_PI;
 }
 
 void DemoGUI::debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color) {

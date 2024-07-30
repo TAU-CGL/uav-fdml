@@ -122,7 +122,53 @@ namespace fdml {
         }
         
     };
+    using VoxelCloud = std::vector<R3xS1_Voxel>;
+    
+    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth) {
+        // Get squence of aggregated odometries
+        OdometrySequence tildeOdometries;
+        for (auto g : odometrySequence) {
+            if (tildeOdometries.empty()) tildeOdometries.push_back(g);
+            else tildeOdometries.push_back(g * tildeOdometries.back());
+        }
 
+        VoxelCloud voxels, localization;
+        voxels.push_back(boundingBox);
 
+        for (int i = 0; i < recursionDepth; i++) {
+            localization.clear();
+            for (auto v : voxels) {
+                bool flag = true;
+                for (int j = 0; j < tildeOdometries.size(); j++) {
+                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env)) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag) localization.push_back(v);
+            }
+            voxels.clear();
+            for (auto v : localization) v.split(voxels);
+        }
+
+        return localization;
+    }
+
+    static OdometrySequence getGroundTruths(OdometrySequence& odometrySequence, R3xS1 q0) {
+        OdometrySequence groundTruths;
+        for (auto g : odometrySequence) {
+            if (groundTruths.empty()) groundTruths.push_back(g * q0);
+            else groundTruths.push_back(g * groundTruths.back());
+        }
+        return groundTruths;
+    }
+
+    static MeasurementSequence getMeasurementSequence(AABBTree& env, OdometrySequence& groundTruths) {
+        MeasurementSequence measurements;
+        for (auto q : groundTruths) {
+            measurements.push_back(q.measureDistance(env));
+        }
+        return measurements;
+    }
     
 }

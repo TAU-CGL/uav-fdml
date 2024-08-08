@@ -30,52 +30,74 @@ void DemoGUI::init() {
     LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
 
     /// -------------------------------
-    fdml::R3xS1 q0(Point(0, 0.2, 0.3), 0);
+
+    buildAABBTree();    
+    runRandomExperiment();
+
+    fflush(stdout);
+}
+
+void DemoGUI::runRandomExperiment() {
+    FT r0 = fdml::Random::randomDouble() * 2 * M_PI;
+    fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
+    odometrySequence.clear();
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
 
-    for (int i = 0; i < 5; i++) {
-        FT x = fdml::Random::randomDouble() * 3 - 1.5;
-        FT y = fdml::Random::randomDouble() * 3 - 1.5;
-        FT z = fdml::Random::randomDouble() * 1.4 - 1.4;
+    for (int i = 0; i < 10; i++) {
+        FT x = fdml::Random::randomDouble() * 2 - 1;
+        FT y = fdml::Random::randomDouble() * 2 - 1;
+        FT z = fdml::Random::randomDouble() * 0.7 - 0.45;
         FT r = fdml::Random::randomDouble() * 2 * M_PI;
+        // FT r = 0;
         odometrySequence.push_back(fdml::R3xS1(Point(x, y, z), r));
     }
 
-    // odometrySequence.push_back(fdml::R3xS1(Point(0, 0.5, 0.2), 3.14159265));
-    // odometrySequence.push_back(fdml::R3xS1(Point(0.7, -1.0, -0.5), -1.57));
-    // odometrySequence.push_back(fdml::R3xS1(Point(-2.0, -1.0, -0.3), 0.1));
-    // odometrySequence.push_back(fdml::R3xS1(Point(1.5, 0.0, 0.6), 0.1));
-    // odometrySequence.push_back(fdml::R3xS1(Point(0.5, 0.5, 0.01), 0.1));
+    fmt::print("q0 = ({}, {}, {}), {}\n", q0.position.x(), q0.position.y(), q0.position.z(), q0.orientation);
+    fmt::print("g1 = ({}, {}, {}), {}\n", odometrySequence[1].position.x(), odometrySequence[1].position.y(), odometrySequence[1].position.z(), odometrySequence[1].orientation);
+    fmt::print("g1 * q0 = ({}, {}, {}), {}\n", (odometrySequence[1] * q0).position.x(), (odometrySequence[1] * q0).position.y(), (odometrySequence[1] * q0).position.z(), (odometrySequence[1] * q0).orientation);
 
     fdml::OdometrySequence groundTruths = fdml::getGroundTruths(odometrySequence, q0);
-    buildAABBTree();
     measurements = fdml::getMeasurementSequence(tree, groundTruths);
+
+    int numBad = 0;
+    for (auto d : measurements)
+        numBad += (d < 0);
+    if (measurements.size() - numBad < 4) {
+        badMeasurement = true;
+        return;
+    }
+    badMeasurement = false;
+
+    //////////////?!!!!!!!!!!!
+    // TEMP: HOTFIX: try to zero out the rotation in odometry
+    //////////////?!!!!!!!!!!!
+    // for (auto g : odometrySequence) g.orientation = 0.0;
+
 
     // Do localization
     std::chrono::steady_clock::time_point begin, end;    
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
-    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 8);
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 10);
+
+    // Print thetas
+    for (auto l : localization) {
+        fmt::print("Theta [{}, {}]; Original = {}\n", l.bottomLeftRotation, l.topRightRotation, r0);
+    }
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
     print("FDML method: {} [sec]\n", __duration.count());
 
-    LE3GetActiveScene()->addPointCloud("localization", "M_default");
-
-    for (auto v : localization) {
-        LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->addPoint(
-            glm::vec3(v.bottomLeftPosition.x(), v.bottomLeftPosition.z(), v.bottomLeftPosition.y())
-        );
+    configurationsHead = configurations.size();
+    for (int idx = 0; idx < configurations.size(); idx++) {
+        std::string markerName = format("__marker_{}", idx + 1);
+        LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(0.f);
     }
-    LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->create();
-    LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->setPointSize(10.f);
-    LE3GetActiveScene()->getObject<LE3PointCloud>("localization")->setMaterial(LE3GetAssetManager().getMaterial("M_localization"));
-
     for (auto q : groundTruths) addConfiguration(q);
 
-    fflush(stdout);
+
 }
 
 void DemoGUI::update(float deltaTime) {
@@ -89,13 +111,21 @@ void DemoGUI::update(float deltaTime) {
     glm::vec3 gizmoPosition = cameraPos + cameraForward * 0.5f + cameraRight * 0.0f + cameraUp * 0.0f;
     // LE3GetSceneManager().getActiveScene()->getObject("gizmo")->getTransform().setPosition(cameraPos + glm::vec3(0.5f, 0.f, 0.f));
 
+    ImGui::Begin("UAV FDM-Localization Demo");
+    if (ImGui::Button("Randomize"))
+        runRandomExperiment();
+    if (badMeasurement)
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Bad measurement (not enough samples). Please randomize again.");
+    ImGui::End();
 }
 
 void DemoGUI::renderDebug() {
-    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
+    // Draw configurations: measure downards (and draw hitpoint)
+    int idx = 0;
     for (auto q : configurations) {
+        if (idx++ < configurationsHead) continue;
         double distance = q.measureDistance(tree);
-        glm::vec3 pos(q.position.x(), q.position.z(), q.position.y());
+        glm::vec3 pos(q.position.x(), q.position.z(), q.position.y()); // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
         LE3GetVisualDebug().drawDebugLine(
             pos, pos - glm::vec3(0.f, distance, 0.f),
             glm::vec3(1.f, 0.f, 1.f)

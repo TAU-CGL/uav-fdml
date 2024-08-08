@@ -27,13 +27,17 @@ protected:
     fdml::R3xS1_Voxel boundingBox;
     
     std::vector<fdml::R3xS1> configurations;
+    int configurationsHead = 0;
     std::list<Triangle> triangles;
 
     fdml::OdometrySequence odometrySequence;
     fdml::OdometrySequence tildeOdometries;
     fdml::MeasurementSequence measurements;
     std::vector<fdml::R3xS1_Voxel> localization;
+    bool badMeasurement = false;
 
+
+    void runRandomExperiment();
     void updateBoundingBox(Point pt);
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <omp.h>
+
 #include <boost/numeric/interval.hpp>
 using Interval = boost::numeric::interval<double, boost::numeric::interval_lib::policies<boost::numeric::interval_lib::save_state<boost::numeric::interval_lib::rounded_transc_std<double>>, boost::numeric::interval_lib::checking_base<double>>>;
 
@@ -29,9 +31,9 @@ namespace fdml {
 
         R3xS1 operator*(const R3xS1& other) {
             FT newOrientation = orientation + other.orientation;
-            FT x = position.x() + other.position.x() * cos(orientation) - other.position.y() * sin(orientation);
-            FT y = position.y() + other.position.x() * sin(orientation) + other.position.y() * cos(orientation);
-            FT z = position.z() + other.position.z();
+            FT x = other.position.x() + position.x() * cos(other.orientation) - position.y() * sin(other.orientation);
+            FT y = other.position.y() + position.x() * sin(other.orientation) + position.y() * cos(other.orientation);
+            FT z = other.position.z() + position.z();
             Point newPosition(x, y, z);
             return R3xS1(newPosition, newOrientation);
         }
@@ -84,13 +86,34 @@ namespace fdml {
             newVoxel.topRightPosition = Point(
                 boost::numeric::upper(xInterval), boost::numeric::upper(yInterval), boost::numeric::upper(zInterval)
             );
-            newVoxel.bottomLeftRotation = bottomLeftRotation + g_tilde.orientation;
-            newVoxel.topRightRotation = topRightRotation + g_tilde.orientation;
+            // newVoxel.bottomLeftRotation = bottomLeftRotation + g_tilde.orientation;
+            // newVoxel.topRightRotation = topRightRotation + g_tilde.orientation;
             return newVoxel;
         }
 
         bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env) {
             R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement);
+
+            // Hotfix: dialate the voxel a bit, to account for precision errors
+            FT diameter = sqrt(
+                (topRightPosition.x() - bottomLeftPosition.x()) * (topRightPosition.x() - bottomLeftPosition.x()) +
+                (topRightPosition.y() - bottomLeftPosition.y()) * (topRightPosition.y() - bottomLeftPosition.y()) +
+                (topRightPosition.z() - bottomLeftPosition.z()) * (topRightPosition.z() - bottomLeftPosition.z())
+            );
+            diameter = sqrt(diameter);
+            FT factor = 0.0;
+
+            newVoxel.bottomLeftPosition = Point(
+                newVoxel.bottomLeftPosition.x() - diameter * factor,
+                newVoxel.bottomLeftPosition.y() - diameter * factor,
+                newVoxel.bottomLeftPosition.z() - diameter * factor
+            );
+            newVoxel.topRightPosition = Point(
+                newVoxel.topRightPosition.x() + diameter * factor,
+                newVoxel.topRightPosition.y() + diameter * factor,
+                newVoxel.topRightPosition.z() + diameter * factor
+            );
+
             Box query(newVoxel.bottomLeftPosition, newVoxel.topRightPosition);
             return env.do_intersect(query);
         }
@@ -125,6 +148,8 @@ namespace fdml {
     using VoxelCloud = std::vector<R3xS1_Voxel>;
     
     static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth) {
+        omp_set_num_threads(omp_get_max_threads());
+
         // Get squence of aggregated odometries
         OdometrySequence tildeOdometries;
         for (auto g : odometrySequence) {
@@ -137,15 +162,19 @@ namespace fdml {
 
         for (int i = 0; i < recursionDepth; i++) {
             localization.clear();
+            // #pragma omp parallel for collapse(2)
             for (auto v : voxels) {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
+                    if (measurementSequence[j] < 0) continue;
                     if (!v.predicate(tildeOdometries[j], measurementSequence[j], env)) {
                         flag = false;
                         break;
                     }
                 }
-                if (flag) localization.push_back(v);
+                if (flag) 
+                    // #pragma omp critical
+                    localization.push_back(v);
             }
             voxels.clear();
             for (auto v : localization) v.split(voxels);

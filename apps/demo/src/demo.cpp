@@ -1,18 +1,5 @@
 #include "demo.h"
 
-namespace fdml {
-    void printTriangle(Triangle t) {
-        print("facet normal 0 0 0\n");
-        print("\touter loop\n");
-        print("\t\tvertex {} {} {}\n", CGAL::to_double(t.vertex(0).x()), CGAL::to_double(t.vertex(0).y()), CGAL::to_double(t.vertex(0).z()));
-        print("\t\tvertex {} {} {}\n", CGAL::to_double(t.vertex(1).x()), CGAL::to_double(t.vertex(1).y()), CGAL::to_double(t.vertex(1).z()));
-        print("\t\tvertex {} {} {}\n", CGAL::to_double(t.vertex(2).x()), CGAL::to_double(t.vertex(2).y()), CGAL::to_double(t.vertex(2).z()));
-        print("\tendloop\n");
-        print("endfacet\n");
-    }
-
-};
-
 void DemoGUI::init() {
     LE3SimpleDemo::init();
 
@@ -40,39 +27,28 @@ void DemoGUI::init() {
 void DemoGUI::runRandomExperiment() {
     FT r0 = fdml::Random::randomDouble() * 2 * M_PI;
     fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
+    fdml::R3xS1 currentQ = q0;
     odometrySequence.clear();
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
 
     for (int i = 0; i < 10; i++) {
-        FT x = fdml::Random::randomDouble() * 2 - 1;
-        FT y = fdml::Random::randomDouble() * 2 - 1;
-        FT z = fdml::Random::randomDouble() * 0.7 - 0.45;
-        FT r = fdml::Random::randomDouble() * 2 * M_PI;
-        // FT r = 0;
-        odometrySequence.push_back(fdml::R3xS1(Point(x, y, z), r));
+        // We want a sequence of 10 true measurements
+        while (true) {
+            FT x = fdml::Random::randomDouble() * 2 - 1;
+            FT y = fdml::Random::randomDouble() * 2 - 1;
+            FT z = fdml::Random::randomDouble() * 0.7 - 0.45;
+            FT r = fdml::Random::randomDouble() * 2 * M_PI;
+            fdml::R3xS1 odometry(Point(x, y, z), r);
+            fdml::R3xS1 tmpQ = odometry * currentQ;
+            if (tmpQ.measureDistance(tree) < 0) continue;
+            odometrySequence.push_back(odometry);
+            currentQ = odometry * currentQ;
+            break;
+        }
     }
-
-    fmt::print("q0 = ({}, {}, {}), {}\n", q0.position.x(), q0.position.y(), q0.position.z(), q0.orientation);
-    fmt::print("g1 = ({}, {}, {}), {}\n", odometrySequence[1].position.x(), odometrySequence[1].position.y(), odometrySequence[1].position.z(), odometrySequence[1].orientation);
-    fmt::print("g1 * q0 = ({}, {}, {}), {}\n", (odometrySequence[1] * q0).position.x(), (odometrySequence[1] * q0).position.y(), (odometrySequence[1] * q0).position.z(), (odometrySequence[1] * q0).orientation);
 
     fdml::OdometrySequence groundTruths = fdml::getGroundTruths(odometrySequence, q0);
     measurements = fdml::getMeasurementSequence(tree, groundTruths);
-
-    int numBad = 0;
-    for (auto d : measurements)
-        numBad += (d < 0);
-    if (measurements.size() - numBad < 4) {
-        badMeasurement = true;
-        return;
-    }
-    badMeasurement = false;
-
-    //////////////?!!!!!!!!!!!
-    // TEMP: HOTFIX: try to zero out the rotation in odometry
-    //////////////?!!!!!!!!!!!
-    // for (auto g : odometrySequence) g.orientation = 0.0;
-
 
     // Do localization
     std::chrono::steady_clock::time_point begin, end;    
@@ -81,23 +57,17 @@ void DemoGUI::runRandomExperiment() {
 
     localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 10);
 
-    // Print thetas
-    for (auto l : localization) {
-        fmt::print("Theta [{}, {}]; Original = {}\n", l.bottomLeftRotation, l.topRightRotation, r0);
-    }
-
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
     print("FDML method: {} [sec]\n", __duration.count());
 
+    // Result visualization
     configurationsHead = configurations.size();
     for (int idx = 0; idx < configurations.size(); idx++) {
         std::string markerName = format("__marker_{}", idx + 1);
         LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(0.f);
     }
     for (auto q : groundTruths) addConfiguration(q);
-
-
 }
 
 void DemoGUI::update(float deltaTime) {
@@ -134,7 +104,6 @@ void DemoGUI::renderDebug() {
             pos - glm::vec3(0.f, distance, 0.f),
             glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(1.f, 0.f, 1.f));
     }
-
 
     // Debug the algorithm
     debugDrawVoxel(boundingBox, glm::vec3(1.f, 0.f, 0.f));

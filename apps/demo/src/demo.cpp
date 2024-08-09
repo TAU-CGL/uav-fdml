@@ -130,15 +130,21 @@ void DemoGUI::buildAABBTree() {
         Point p2(vertices[indices[i + 1]].position[0], vertices[indices[i + 1]].position[2], vertices[indices[i + 1]].position[1]);
         Point p3(vertices[indices[i + 2]].position[0], vertices[indices[i + 2]].position[2], vertices[indices[i + 2]].position[1]);
         Triangle t(p1, p2, p3);
-        updateBoundingBox(p1);
-        updateBoundingBox(p2);
-        updateBoundingBox(p3);
+        // updateBoundingBox(p1);
+        // updateBoundingBox(p2);
+        // updateBoundingBox(p3);
         triangles.push_back(t);
     }
     tree = AABBTree(triangles.begin(), triangles.end());
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
     print("Constructing AABB tree: {} [sec]\n", __duration.count());
+
+    // Get bounding box from BB tree
+    boundingBox.bottomLeftPosition = Point(tree.bbox().xmin(), tree.bbox().ymin(), tree.bbox().zmin());
+    boundingBox.topRightPosition = Point(tree.bbox().xmax(), tree.bbox().ymax(), tree.bbox().zmax());
+    boundingBox.bottomLeftRotation = 0.0f;
+    boundingBox.topRightRotation = 2.f * M_PI;
 }
 
 void DemoGUI::addConfiguration(fdml::R3xS1 q) {
@@ -148,18 +154,6 @@ void DemoGUI::addConfiguration(fdml::R3xS1 q) {
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
-}
-
-void DemoGUI::updateBoundingBox(Point pt) {
-    if (pt.x() < boundingBox.bottomLeftPosition.x()) boundingBox.bottomLeftPosition = Point(pt.x(), boundingBox.bottomLeftPosition.y(), boundingBox.bottomLeftPosition.z());
-    if (pt.y() < boundingBox.bottomLeftPosition.y()) boundingBox.bottomLeftPosition = Point(boundingBox.bottomLeftPosition.x(), pt.y(), boundingBox.bottomLeftPosition.z());
-    if (pt.z() < boundingBox.bottomLeftPosition.z()) boundingBox.bottomLeftPosition = Point(boundingBox.bottomLeftPosition.x(), boundingBox.bottomLeftPosition.y(), pt.z());
-    if (pt.x() > boundingBox.topRightPosition.x()) boundingBox.topRightPosition = Point(pt.x(), boundingBox.topRightPosition.y(), boundingBox.topRightPosition.z());
-    if (pt.y() > boundingBox.topRightPosition.y()) boundingBox.topRightPosition = Point(boundingBox.topRightPosition.x(), pt.y(), boundingBox.topRightPosition.z());
-    if (pt.z() > boundingBox.topRightPosition.z()) boundingBox.topRightPosition = Point(boundingBox.topRightPosition.x(), boundingBox.topRightPosition.y(), pt.z());
-
-    boundingBox.bottomLeftRotation = 0.0f;
-    boundingBox.topRightRotation = 2.0f * M_PI;
 }
 
 void DemoGUI::debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color) {

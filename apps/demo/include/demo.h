@@ -38,6 +38,5 @@ protected:
 
 
     void runRandomExperiment();
-    void updateBoundingBox(Point pt);
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
 };

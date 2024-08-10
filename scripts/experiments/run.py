@@ -10,6 +10,8 @@ from experiments import *
 
 BIN_DIR = "bin"
 RESULTS_DIR = "results"
+if not os.path.exists(RESULTS_DIR):
+    os.mkdir(RESULTS_DIR)
 
 
 # TODO: Add some form of caching
@@ -85,8 +87,9 @@ def create_figure(
         x_col: str, labels: List[str],
         hor_label: str, ver_label: str, options: dict):
     df = pd.read_csv(_get_table_name(experiment_name))
-
+    print(df)
     xs = df[x_col]
+    print(xs)
     offset = 0
     for label in labels:
         if figure_type.startswith("bar"):

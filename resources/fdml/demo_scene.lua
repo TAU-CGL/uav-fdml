@@ -10,6 +10,10 @@ Scene.Textures = {
     {
         Name = "T_room",
         Path = "/fdml/scans/240521-141038/240521-141038.jpg"
+    },
+    {
+        Name = "T_DIF_drone",
+        Path = "/fdml/drone/T_DIF_drone.png"
     }
 }
 Scene.Materials = {
@@ -22,7 +26,7 @@ Scene.Materials = {
     {
         Name = "M_cursor",
         ShaderName = "S_default",
-        DiffuseColor = {33/255, 114/255, 41/255, 0.8},
+        DiffuseColor = {33/255, 114/255, 41/255, 0.5},
     },
     {
         Name = "M_custom_gizmo",
@@ -32,6 +36,11 @@ Scene.Materials = {
         Name = "M_localization",
         ShaderName = "S_default",
         DiffuseColor = {0.0, 1.0, 1.0, 1.0}
+    },
+    {
+        Name = "M_drone",
+        ShaderName = "S_default",
+        DiffuseTexture = "T_DIF_drone",
     }
 
 }
@@ -45,6 +54,10 @@ Scene.StaticMeshes = {
         Name = "SM_cursor",
         Path = "/fdml/cursor.obj",
         KeepData = true
+    },
+    {
+        Name = "SM_drone",
+        Path = "/fdml/drone/SM_drone.fbx",
     }
 }
 Scene.SkeletalMeshes = {

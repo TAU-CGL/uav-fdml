@@ -25,7 +25,7 @@ void DemoGUI::init() {
 }
 
 void DemoGUI::runRandomExperiment() {
-    FT r0 = fdml::Random::randomDouble() * 2 * M_PI;
+    FT r0 = fdml::Random::randomDouble() * 2 * M_PI * 0;
     fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
     fdml::R3xS1 currentQ = q0;
     odometrySequence.clear();
@@ -65,7 +65,9 @@ void DemoGUI::runRandomExperiment() {
     configurationsHead = configurations.size();
     for (int idx = 0; idx < configurations.size(); idx++) {
         std::string markerName = format("__marker_{}", idx + 1);
+        std::string droneMarkerName = format("__drone_{}", idx + 1);
         LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(0.f);
+        LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setScale(0.f);
     }
     for (auto q : groundTruths) addConfiguration(q);
 }
@@ -130,9 +132,6 @@ void DemoGUI::buildAABBTree() {
         Point p2(vertices[indices[i + 1]].position[0], vertices[indices[i + 1]].position[2], vertices[indices[i + 1]].position[1]);
         Point p3(vertices[indices[i + 2]].position[0], vertices[indices[i + 2]].position[2], vertices[indices[i + 2]].position[1]);
         Triangle t(p1, p2, p3);
-        // updateBoundingBox(p1);
-        // updateBoundingBox(p2);
-        // updateBoundingBox(p3);
         triangles.push_back(t);
     }
     tree = AABBTree(triangles.begin(), triangles.end());
@@ -150,10 +149,17 @@ void DemoGUI::buildAABBTree() {
 void DemoGUI::addConfiguration(fdml::R3xS1 q) {
     configurations.push_back(q);
     std::string markerName = format("__marker_{}", configurations.size());
-    LE3GetSceneManager().getActiveScene()->addStaticModel(markerName, "SM_cursor", "M_cursor");
+    std::string droneMarkerName = format("__drone_{}", configurations.size());
+
+    LE3GetSceneManager().getActiveScene()->addStaticModel(markerName, "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
+    LE3GetSceneManager().getActiveScene()->addStaticModel(droneMarkerName, "SM_drone", "M_drone");
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
+
+    LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setScale(0.05f);
+    LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
+    LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 }
 
 void DemoGUI::debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color) {

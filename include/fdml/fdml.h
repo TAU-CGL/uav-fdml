@@ -118,6 +118,13 @@ namespace fdml {
             return env.do_intersect(query);
         }
 
+        bool contains(R3xS1 q) {
+            return q.position.x() >= bottomLeftPosition.x() && q.position.x() <= topRightPosition.x() &&
+                q.position.y() >= bottomLeftPosition.y() && q.position.y() <= topRightPosition.y() &&
+                q.position.z() >= bottomLeftPosition.z() && q.position.z() <= topRightPosition.z() &&
+                q.orientation >= bottomLeftRotation && q.orientation <= topRightRotation;
+        }
+
     private:
         enum class SplitAxis { SPLIT_X, SPLIT_Y, SPLIT_Z, SPLIT_R };
         void splitSingleAxis(std::vector<R3xS1_Voxel>& out, SplitAxis axis) {

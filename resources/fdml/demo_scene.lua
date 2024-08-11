@@ -14,7 +14,15 @@ Scene.Textures = {
     {
         Name = "T_DIF_drone",
         Path = "/fdml/drone/T_DIF_drone.png"
-    }
+    },
+    {
+        Name = "T_SPEC_drone",
+        Path = "/fdml/drone/T_MTL_drone.png"
+    },
+    {
+        Name = "T_basilica",
+        Path = "/fdml/drone/basilica.png"
+    },
 }
 Scene.Materials = {
     {
@@ -26,7 +34,9 @@ Scene.Materials = {
     {
         Name = "M_cursor",
         ShaderName = "S_default",
-        DiffuseColor = {33/255, 114/255, 41/255, 0.5},
+        -- DiffuseColor = {33/255, 114/255, 41/255, 0.3},
+        DiffuseColor = {10/255, 10/255, 10/255, 0.4},
+        SpecularIntensity = 0.0,
     },
     {
         Name = "M_custom_gizmo",
@@ -41,6 +51,10 @@ Scene.Materials = {
         Name = "M_drone",
         ShaderName = "S_default",
         DiffuseTexture = "T_DIF_drone",
+        SpecularTexture = "T_SPEC_drone",
+        Shininess = 128,
+        Cubemap = "T_basilica",
+        ReflectionIntensity = 0.6
     }
 
 }
@@ -75,6 +89,14 @@ Scene.Objects = {
         Name = "room",
         MeshName = "SM_room",
         MaterialName = "M_room",
+    },
+    {
+        Type = "StaticModel",
+        Name = "demoDrone",
+        MeshName = "SM_drone",
+        MaterialName = "M_drone",
+        Position = {0, -5, 0},
+        Scale = {0.5, 0.5, 0.5},
     },
 }
 

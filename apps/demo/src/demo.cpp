@@ -25,7 +25,7 @@ void DemoGUI::init() {
 }
 
 void DemoGUI::runRandomExperiment() {
-    FT r0 = fdml::Random::randomDouble() * 2 * M_PI * 0;
+    FT r0 = fdml::Random::randomDouble() * 2 * M_PI;
     fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
     fdml::R3xS1 currentQ = q0;
     odometrySequence.clear();
@@ -55,11 +55,11 @@ void DemoGUI::runRandomExperiment() {
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
-    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 10);
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 12);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
-    print("FDML method: {} [sec]\n", __duration.count());
+    print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
 
     // Result visualization
     configurationsHead = configurations.size();
@@ -154,6 +154,7 @@ void DemoGUI::addConfiguration(fdml::R3xS1 q) {
     LE3GetSceneManager().getActiveScene()->addStaticModel(markerName, "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
     LE3GetSceneManager().getActiveScene()->addStaticModel(droneMarkerName, "SM_drone", "M_drone");
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
+    LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(1.75f);
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
     LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 

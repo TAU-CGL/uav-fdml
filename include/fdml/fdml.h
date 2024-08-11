@@ -169,7 +169,7 @@ namespace fdml {
 
         for (int i = 0; i < recursionDepth; i++) {
             localization.clear();
-            // #pragma omp parallel for collapse(2)
+            #pragma omp parallel for
             for (auto v : voxels) {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
@@ -179,9 +179,10 @@ namespace fdml {
                         break;
                     }
                 }
-                if (flag) 
-                    // #pragma omp critical
+                if (flag) {
+                    #pragma omp critical
                     localization.push_back(v);
+                }
             }
             voxels.clear();
             for (auto v : localization) v.split(voxels);

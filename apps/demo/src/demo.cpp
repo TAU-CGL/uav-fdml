@@ -26,7 +26,19 @@ void DemoGUI::init() {
 
 void DemoGUI::runRandomExperiment() {
     FT r0 = fdml::Random::randomDouble() * 2 * M_PI;
-    fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
+    // fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
+    fdml::R3xS1 q0;
+
+    while (true) {
+            FT x = fdml::Random::randomDouble() * 2 - 1;
+            FT y = fdml::Random::randomDouble() * 2 - 1;
+            FT z = fdml::Random::randomDouble() * 0.7 - 0.45;
+            FT r = fdml::Random::randomDouble() * 2 * M_PI;
+            q0 = fdml::R3xS1(Point(x, y, z), r);
+            if (q0.measureDistance(tree) < 0) continue;
+            break;
+        }
+
     fdml::R3xS1 currentQ = q0;
     odometrySequence.clear();
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));

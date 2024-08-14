@@ -52,6 +52,7 @@ Scene.Materials = {
         ShaderName = "S_default",
         DiffuseTexture = "T_DIF_drone",
         SpecularTexture = "T_SPEC_drone",
+        SpecularIntensity = 10.0,
         Shininess = 128,
         Cubemap = "T_basilica",
         ReflectionIntensity = 0.6

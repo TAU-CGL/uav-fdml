@@ -67,7 +67,15 @@ void DemoGUI::runRandomExperiment() {
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
-    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 12);
+    fdml::ErrorBounds errorBounds;
+    errorBounds.errorDistance = 0.001;
+    errorBounds.errorOdometryX = 0.001;
+    errorBounds.errorOdometryY = 0.001;
+    errorBounds.errorOdometryZ = 0.001;
+    errorBounds.errorOdometryR = 0.001;
+
+
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 12, errorBounds);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;

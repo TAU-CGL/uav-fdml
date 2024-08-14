@@ -50,6 +50,13 @@ namespace fdml {
     using OdometrySequence = std::vector<R3xS1>;
     using MeasurementSequence = std::vector<double>;
 
+    struct ErrorBounds {
+        FT errorOdometryX, errorOdometryY, errorOdometryZ, errorOdometryR;
+        FT errorDistance;
+
+        ErrorBounds() : errorOdometryX(0), errorOdometryY(0), errorOdometryZ(0), errorOdometryR(0), errorDistance(0) {}
+    };
+
     struct R3xS1_Voxel {
     public:
         Point bottomLeftPosition, topRightPosition;
@@ -69,15 +76,23 @@ namespace fdml {
         }
 
         // Apply the g_tilde offset to the voxel as described in the paper
-        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement) {
+        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds = ErrorBounds()) {
             Interval xInterval(bottomLeftPosition.x(), topRightPosition.x());
             Interval yInterval(bottomLeftPosition.y(), topRightPosition.y());
             Interval zInterval(bottomLeftPosition.z(), topRightPosition.z());
             Interval rInterval(bottomLeftRotation, topRightRotation);
 
-            xInterval = xInterval + g_tilde.position.x() * boost::numeric::cos(rInterval) - g_tilde.position.y() * boost::numeric::sin(rInterval);
-            yInterval = yInterval + g_tilde.position.x() * boost::numeric::sin(rInterval) + g_tilde.position.y() * boost::numeric::cos(rInterval);
-            zInterval = zInterval + g_tilde.position.z() - measurement;
+            Interval errorOdometryX(-errorBounds.errorOdometryX, errorBounds.errorOdometryX);
+            Interval errorOdometryY(-errorBounds.errorOdometryY, errorBounds.errorOdometryY);
+            Interval errorOdometryZ(-errorBounds.errorOdometryZ, errorBounds.errorOdometryZ);
+            Interval errorOdometryR(-errorBounds.errorOdometryR, errorBounds.errorOdometryR);
+            Interval errorDistance(-errorBounds.errorDistance, errorBounds.errorDistance);
+
+            rInterval += errorOdometryR;
+
+            xInterval = xInterval + g_tilde.position.x() * boost::numeric::cos(rInterval) - g_tilde.position.y() * boost::numeric::sin(rInterval) + errorOdometryX;
+            yInterval = yInterval + g_tilde.position.x() * boost::numeric::sin(rInterval) + g_tilde.position.y() * boost::numeric::cos(rInterval) + errorOdometryY;
+            zInterval = zInterval + g_tilde.position.z() - measurement + errorOdometryZ + errorDistance;
             
             R3xS1_Voxel newVoxel;
             newVoxel.bottomLeftPosition = Point(
@@ -91,8 +106,8 @@ namespace fdml {
             return newVoxel;
         }
 
-        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env) {
-            R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement);
+        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds = ErrorBounds()) {
+            R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement, errorBounds);
 
             // Hotfix: dialate the voxel a bit, to account for precision errors
             FT diameter = sqrt(
@@ -154,7 +169,7 @@ namespace fdml {
     };
     using VoxelCloud = std::vector<R3xS1_Voxel>;
     
-    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth) {
+    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, ErrorBounds errorBounds = ErrorBounds()) {
         omp_set_num_threads(omp_get_max_threads());
 
         // Get squence of aggregated odometries
@@ -174,7 +189,7 @@ namespace fdml {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
                     if (measurementSequence[j] < 0) continue;
-                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env)) {
+                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env, errorBounds)) {
                         flag = false;
                         break;
                     }

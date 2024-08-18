@@ -76,16 +76,16 @@ namespace fdml {
         }
 
         // Apply the g_tilde offset to the voxel as described in the paper
-        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds = ErrorBounds()) {
+        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds = ErrorBounds(), int iteration = 1) {
             Interval xInterval(bottomLeftPosition.x(), topRightPosition.x());
             Interval yInterval(bottomLeftPosition.y(), topRightPosition.y());
             Interval zInterval(bottomLeftPosition.z(), topRightPosition.z());
             Interval rInterval(bottomLeftRotation, topRightRotation);
 
-            Interval errorOdometryX(-errorBounds.errorOdometryX, errorBounds.errorOdometryX);
-            Interval errorOdometryY(-errorBounds.errorOdometryY, errorBounds.errorOdometryY);
-            Interval errorOdometryZ(-errorBounds.errorOdometryZ, errorBounds.errorOdometryZ);
-            Interval errorOdometryR(-errorBounds.errorOdometryR, errorBounds.errorOdometryR);
+            Interval errorOdometryX(-errorBounds.errorOdometryX * iteration, errorBounds.errorOdometryX * iteration);
+            Interval errorOdometryY(-errorBounds.errorOdometryY * iteration, errorBounds.errorOdometryY * iteration);
+            Interval errorOdometryZ(-errorBounds.errorOdometryZ * iteration, errorBounds.errorOdometryZ * iteration);
+            Interval errorOdometryR(-errorBounds.errorOdometryR * iteration, errorBounds.errorOdometryR * iteration);
             Interval errorDistance(-errorBounds.errorDistance, errorBounds.errorDistance);
 
             rInterval += errorOdometryR;
@@ -106,8 +106,8 @@ namespace fdml {
             return newVoxel;
         }
 
-        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds = ErrorBounds()) {
-            R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement, errorBounds);
+        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds = ErrorBounds(), int interation = 1) {
+            R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement, errorBounds, interation);
 
             // Hotfix: dialate the voxel a bit, to account for precision errors
             FT diameter = sqrt(
@@ -138,6 +138,13 @@ namespace fdml {
                 q.position.y() >= bottomLeftPosition.y() && q.position.y() <= topRightPosition.y() &&
                 q.position.z() >= bottomLeftPosition.z() && q.position.z() <= topRightPosition.z() &&
                 q.orientation >= bottomLeftRotation && q.orientation <= topRightRotation;
+        }
+
+        bool areNeighbors(R3xS1_Voxel& other) {
+            return (topRightPosition.x() == other.bottomLeftPosition.x() || bottomLeftPosition.x() == other.topRightPosition.x()) &&
+                (topRightPosition.y() == other.bottomLeftPosition.y() || bottomLeftPosition.y() == other.topRightPosition.y()) &&
+                (topRightPosition.z() == other.bottomLeftPosition.z() || bottomLeftPosition.z() == other.topRightPosition.z()) &&
+                (topRightRotation == other.bottomLeftRotation || bottomLeftRotation == other.topRightRotation);
         }
 
     private:
@@ -189,7 +196,7 @@ namespace fdml {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
                     if (measurementSequence[j] < 0) continue;
-                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env, errorBounds)) {
+                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env, errorBounds, j+1)) {
                         flag = false;
                         break;
                     }
@@ -204,6 +211,47 @@ namespace fdml {
         }
 
         return localization;
+    }
+
+    static std::vector<R3xS1> clusterLocations(VoxelCloud& locations) {
+        Point center(0, 0, 0);
+        FT rotation = 0;
+        for (auto v : locations) {
+            center = Point(center.x() + (v.bottomLeftPosition.x() + v.topRightPosition.x()) / 2, center.y() + (v.bottomLeftPosition.y() + v.topRightPosition.y()) / 2, center.z() + (v.bottomLeftPosition.z() + v.topRightPosition.z()) / 2);
+            rotation += (v.bottomLeftRotation + v.topRightRotation) / 2;
+        }
+        center = Point(center.x() / locations.size(), center.y() / locations.size(), center.z() / locations.size());
+        rotation /= locations.size();
+        return {R3xS1(center, rotation)};
+
+        // std::vector<VoxelCloud> clusters;
+        // for (auto v : locations) {
+        //     bool flag = false;
+        //     for (auto cluster : clusters) {
+        //         for (auto vc : cluster) {
+        //             if (v.areNeighbors(vc)) {
+        //                 cluster.push_back(v);
+        //                 flag = true;
+        //                 break;
+        //             }
+        //         }
+        //     }
+        //     if (!flag) clusters.push_back({v});
+        // }
+
+        // std::vector<R3xS1> centers;
+        // for (auto cluster : clusters) {
+        //     Point center(0, 0, 0);
+        //     FT rotation = 0;
+        //     for (auto v : cluster) {
+        //         center = Point(center.x() + (v.bottomLeftPosition.x() + v.topRightPosition.x()) / 2, center.y() + (v.bottomLeftPosition.y() + v.topRightPosition.y()) / 2, center.z() + (v.bottomLeftPosition.z() + v.topRightPosition.z()) / 2);
+        //         rotation += (v.bottomLeftRotation + v.topRightRotation) / 2;
+        //     }
+        //     center = Point(center.x() / cluster.size(), center.y() / cluster.size(), center.z() / cluster.size());
+        //     rotation /= cluster.size();
+        //     centers.push_back(R3xS1(center, rotation));
+        // }
+        // return centers;
     }
 
     static OdometrySequence getGroundTruths(OdometrySequence& odometrySequence, R3xS1 q0) {

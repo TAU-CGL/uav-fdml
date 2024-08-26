@@ -16,12 +16,12 @@ void DemoGUI::init() {
     LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
     LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
 
-    LE3GetActiveScene()->setCulling(false);
+    LE3GetActiveScene()->setCulling(true);
 
     /// -------------------------------
 
     buildAABBTree();    
-    // runRandomExperiment();
+    runRandomExperiment();
 
     fflush(stdout);
 }
@@ -153,9 +153,11 @@ void DemoGUI::renderDebug() {
     debugDrawVoxel(boundingBox, glm::vec3(1.f, 0.f, 0.f));
 
     for (auto v : localization) debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
-    // auto v = localization[0];
-    // for (int j = 0; j < tildeOdometries.size(); j++) {
-    //     debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
+    // if (localization.size() > 0) {
+    //     auto v = localization[0];
+    //     for (int j = 0; j < tildeOdometries.size(); j++) {
+    //         debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j])[0], glm::vec3(1.f, 1.f, 0.f));
+    //     }
     // }
 }
 

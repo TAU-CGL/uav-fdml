@@ -2,9 +2,6 @@
 
 #include <omp.h>
 
-#include <boost/numeric/interval.hpp>
-using Interval = boost::numeric::interval<double, boost::numeric::interval_lib::policies<boost::numeric::interval_lib::save_state<boost::numeric::interval_lib::rounded_transc_std<double>>, boost::numeric::interval_lib::checking_base<double>>>;
-
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
@@ -20,6 +17,9 @@ using Box = K::Iso_cuboid_3;
 using Triangle = K::Triangle_3;
 using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primitive<K, std::list<Triangle>::iterator>>>;
 
+#define MIN(a, b) ((a) <= (b) ? (a) : (b))
+#define MAX(a, b) ((a) >= (b) ? (a) : (b))
+#define INFTY 1e10
 
 namespace fdml {
     struct R3xS1 {
@@ -76,60 +76,56 @@ namespace fdml {
         }
 
         // Apply the g_tilde offset to the voxel as described in the paper
-        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds = ErrorBounds(), int iteration = 1) {
-            Interval xInterval(bottomLeftPosition.x(), topRightPosition.x());
-            Interval yInterval(bottomLeftPosition.y(), topRightPosition.y());
-            Interval zInterval(bottomLeftPosition.z(), topRightPosition.z());
-            Interval rInterval(bottomLeftRotation, topRightRotation);
+        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement) {
+            std::vector<FT> thetas;
 
-            Interval errorOdometryX(-errorBounds.errorOdometryX * iteration, errorBounds.errorOdometryX * iteration);
-            Interval errorOdometryY(-errorBounds.errorOdometryY * iteration, errorBounds.errorOdometryY * iteration);
-            Interval errorOdometryZ(-errorBounds.errorOdometryZ * iteration, errorBounds.errorOdometryZ * iteration);
-            Interval errorOdometryR(-errorBounds.errorOdometryR * iteration, errorBounds.errorOdometryR * iteration);
-            Interval errorDistance(-errorBounds.errorDistance, errorBounds.errorDistance);
+            // Find X axis bounds
+            thetas.push_back(bottomLeftRotation);
+            thetas.push_back(topRightRotation);
+            for (int k = -3; k <= 3; k++) {
+                FT tmp = atan(-g_tilde.position.y() / g_tilde.position.x()) + k * M_PI;
+                if (tmp >= bottomLeftRotation && tmp <= topRightRotation) thetas.push_back(tmp);
+            }
+            FT minX = INFTY, maxX = -INFTY;
+            for (auto& theta : thetas) {
+                FT x = g_tilde.position.x() * cos(theta) - g_tilde.position.y() * sin(theta);
+                minX = MIN(minX, x);
+                maxX = MAX(maxX, x);
+            }
+            minX += bottomLeftPosition.x();
+            maxX += topRightPosition.x();
 
-            rInterval += errorOdometryR;
+            // Find Y axis bounds
+            thetas.clear();
+            thetas.push_back(bottomLeftRotation);
+            thetas.push_back(topRightRotation);
+            for (int k = -3; k <= 3; k++) {
+                FT tmp = atan(g_tilde.position.x() / g_tilde.position.y()) + k * M_PI;
+                if (tmp >= bottomLeftRotation && tmp <= topRightRotation) thetas.push_back(tmp);
+            }
+            FT minY = INFTY, maxY = -INFTY;
+            for (auto& theta : thetas) {
+                FT y = g_tilde.position.x() * sin(theta) + g_tilde.position.y() * cos(theta);
+                minY = MIN(minY, y);
+                maxY = MAX(maxY, y);
+            }
+            minY += bottomLeftPosition.y();
+            maxY += topRightPosition.y();
 
-            xInterval = xInterval + g_tilde.position.x() * boost::numeric::cos(rInterval) - g_tilde.position.y() * boost::numeric::sin(rInterval) + errorOdometryX;
-            yInterval = yInterval + g_tilde.position.x() * boost::numeric::sin(rInterval) + g_tilde.position.y() * boost::numeric::cos(rInterval) + errorOdometryY;
-            zInterval = zInterval + g_tilde.position.z() - measurement + errorOdometryZ + errorDistance;
-            
-            R3xS1_Voxel newVoxel;
-            newVoxel.bottomLeftPosition = Point(
-                boost::numeric::lower(xInterval), boost::numeric::lower(yInterval), boost::numeric::lower(zInterval)
-            );
-            newVoxel.topRightPosition = Point(
-                boost::numeric::upper(xInterval), boost::numeric::upper(yInterval), boost::numeric::upper(zInterval)
-            );
-            // newVoxel.bottomLeftRotation = bottomLeftRotation + g_tilde.orientation;
-            // newVoxel.topRightRotation = topRightRotation + g_tilde.orientation;
-            return newVoxel;
+            // Find Z axis bounds
+            FT minZ = bottomLeftPosition.z() + g_tilde.position.z() - measurement;
+            FT maxZ = topRightPosition.z() + g_tilde.position.z() - measurement;
+
+            R3xS1_Voxel v;
+            v.bottomLeftPosition = Point(minX, minY, minZ);
+            v.topRightPosition = Point(maxX, maxY, maxZ);
+            v.bottomLeftRotation = v.topRightRotation = 0;
+            return v;
         }
 
-        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds = ErrorBounds(), int interation = 1) {
-            R3xS1_Voxel newVoxel = forwardOdometry(g_tilde, measurement, errorBounds, interation);
-
-            // Hotfix: dialate the voxel a bit, to account for precision errors
-            FT diameter = sqrt(
-                (topRightPosition.x() - bottomLeftPosition.x()) * (topRightPosition.x() - bottomLeftPosition.x()) +
-                (topRightPosition.y() - bottomLeftPosition.y()) * (topRightPosition.y() - bottomLeftPosition.y()) +
-                (topRightPosition.z() - bottomLeftPosition.z()) * (topRightPosition.z() - bottomLeftPosition.z())
-            );
-            diameter = sqrt(diameter);
-            FT factor = 0.0;
-
-            newVoxel.bottomLeftPosition = Point(
-                newVoxel.bottomLeftPosition.x() - diameter * factor,
-                newVoxel.bottomLeftPosition.y() - diameter * factor,
-                newVoxel.bottomLeftPosition.z() - diameter * factor
-            );
-            newVoxel.topRightPosition = Point(
-                newVoxel.topRightPosition.x() + diameter * factor,
-                newVoxel.topRightPosition.y() + diameter * factor,
-                newVoxel.topRightPosition.z() + diameter * factor
-            );
-
-            Box query(newVoxel.bottomLeftPosition, newVoxel.topRightPosition);
+        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env) {
+            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement);
+            Box query(v.bottomLeftPosition, v.topRightPosition);
             return env.do_intersect(query);
         }
 
@@ -187,7 +183,13 @@ namespace fdml {
         }
 
         VoxelCloud voxels, localization;
-        voxels.push_back(boundingBox);
+        R3xS1_Voxel bb1 = boundingBox, bb2 = boundingBox;
+        bb1.bottomLeftRotation = 0;
+        bb1.topRightRotation = M_PI;
+        bb2.bottomLeftRotation = M_PI;
+        bb2.topRightRotation = 2 * M_PI;
+        voxels.push_back(bb1);
+        voxels.push_back(bb2);
 
         for (int i = 0; i < recursionDepth; i++) {
             localization.clear();
@@ -196,7 +198,7 @@ namespace fdml {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
                     if (measurementSequence[j] < 0) continue;
-                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env, errorBounds, j+1)) {
+                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env)) {
                         flag = false;
                         break;
                     }

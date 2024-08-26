@@ -16,23 +16,23 @@ void DemoGUI::init() {
     LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
     LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
 
+    LE3GetActiveScene()->setCulling(false);
+
     /// -------------------------------
 
     buildAABBTree();    
-    runRandomExperiment();
+    // runRandomExperiment();
 
     fflush(stdout);
 }
 
 void DemoGUI::runRandomExperiment() {
-    FT r0 = fdml::Random::randomDouble() * 2 * M_PI;
-    // fdml::R3xS1 q0(Point(0.5, 1.2, 0.3), r0);
     fdml::R3xS1 q0;
 
     while (true) {
-            FT x = fdml::Random::randomDouble() * 2 - 1;
-            FT y = fdml::Random::randomDouble() * 2 - 1;
-            FT z = fdml::Random::randomDouble() * 0.7 - 0.45;
+            FT x = fdml::Random::randomDouble() * (boundingBox.topRightPosition.x() - boundingBox.bottomLeftPosition.x()) + boundingBox.bottomLeftPosition.x();
+            FT y = fdml::Random::randomDouble() * (boundingBox.topRightPosition.y() - boundingBox.bottomLeftPosition.y()) + boundingBox.bottomLeftPosition.y() - 0.2;
+            FT z = fdml::Random::randomDouble() * (boundingBox.topRightPosition.z() - boundingBox.bottomLeftPosition.z()) + boundingBox.bottomLeftPosition.z();
             FT r = fdml::Random::randomDouble() * 2 * M_PI;
             q0 = fdml::R3xS1(Point(x, y, z), r);
             if (q0.measureDistance(tree) < 0) continue;
@@ -43,15 +43,16 @@ void DemoGUI::runRandomExperiment() {
     odometrySequence.clear();
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 10; i++) {
         // We want a sequence of 10 true measurements
         while (true) {
-            FT x = fdml::Random::randomDouble() * 2 - 1;
-            FT y = fdml::Random::randomDouble() * 2 - 1;
-            FT z = fdml::Random::randomDouble() * 0.7 - 0.45;
+            FT x = fdml::Random::randomDouble() * (boundingBox.topRightPosition.x() - boundingBox.bottomLeftPosition.x()) + boundingBox.bottomLeftPosition.x();
+            FT y = fdml::Random::randomDouble() * (boundingBox.topRightPosition.y() - boundingBox.bottomLeftPosition.y()) + boundingBox.bottomLeftPosition.y();
+            FT z = fdml::Random::randomDouble() * (boundingBox.topRightPosition.z() - boundingBox.bottomLeftPosition.z()) + boundingBox.bottomLeftPosition.z();
             FT r = fdml::Random::randomDouble() * 2 * M_PI;
             fdml::R3xS1 odometry(Point(x, y, z), r);
             fdml::R3xS1 tmpQ = odometry * currentQ;
+            if (tmpQ.position.z() > boundingBox.topRightPosition.z() - 0.3) continue;
             if (tmpQ.measureDistance(tree) < 0) continue;
             odometrySequence.push_back(odometry);
             currentQ = odometry * currentQ;
@@ -68,8 +69,8 @@ void DemoGUI::runRandomExperiment() {
     begin = std::chrono::steady_clock::now();
 
     fdml::ErrorBounds errorBounds;
-    errorBounds.errorDistance = 0.05;
-    errorBounds.errorOdometryX = 0.01;
+    errorBounds.errorDistance = 0.00;
+    errorBounds.errorOdometryX = 0.00;
     errorBounds.errorOdometryY = 0.00;
     errorBounds.errorOdometryZ = 0.00;
     errorBounds.errorOdometryR = 0.00;
@@ -85,7 +86,7 @@ void DemoGUI::runRandomExperiment() {
         measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
         
 
-    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 9, errorBounds);
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 12, errorBounds);
     auto predictions = fdml::clusterLocations(localization);
 
     for (auto pred : predictions) {
@@ -152,10 +153,10 @@ void DemoGUI::renderDebug() {
     debugDrawVoxel(boundingBox, glm::vec3(1.f, 0.f, 0.f));
 
     for (auto v : localization) debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
-    auto v = localization[0];
-    for (int j = 0; j < tildeOdometries.size(); j++) {
-        debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
-    }
+    // auto v = localization[0];
+    // for (int j = 0; j < tildeOdometries.size(); j++) {
+    //     debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j]), glm::vec3(1.f, 1.f, 0.f));
+    // }
 }
 
 void DemoGUI::buildAABBTree() {

@@ -28,7 +28,7 @@ Scene.Materials = {
     {
         Name = "M_room",
         ShaderName = "S_default",
-        DiffuseTexture = "T_room",
+        -- DiffuseTexture = "T_room",
         Shininess = 1024
     },
     {
@@ -60,9 +60,14 @@ Scene.Materials = {
 
 }
 Scene.StaticMeshes = {
+    -- {
+    --     Name = "SM_room",
+    --     Path = "/fdml/scans/240521-141038/240521-141038-scaled.obj",
+    --     KeepData = true
+    -- },
     {
         Name = "SM_room",
-        Path = "/fdml/scans/240521-141038/240521-141038-scaled.obj",
+        Path = "/fdml/scans/isprs/cs1.obj",
         KeepData = true
     },
     {

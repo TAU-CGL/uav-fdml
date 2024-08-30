@@ -31,10 +31,11 @@ void DemoGUI::runRandomExperiment() {
 
     while (true) {
             FT x = fdml::Random::randomDouble() * (boundingBox.topRightPosition.x() - boundingBox.bottomLeftPosition.x()) + boundingBox.bottomLeftPosition.x();
-            FT y = fdml::Random::randomDouble() * (boundingBox.topRightPosition.y() - boundingBox.bottomLeftPosition.y()) + boundingBox.bottomLeftPosition.y() - 0.2;
+            FT y = fdml::Random::randomDouble() * (boundingBox.topRightPosition.y() - boundingBox.bottomLeftPosition.y()) + boundingBox.bottomLeftPosition.y();
             FT z = fdml::Random::randomDouble() * (boundingBox.topRightPosition.z() - boundingBox.bottomLeftPosition.z()) + boundingBox.bottomLeftPosition.z();
             FT r = fdml::Random::randomDouble() * 2 * M_PI;
             q0 = fdml::R3xS1(Point(x, y, z), r);
+            fmt::print("Trying q0");
             if (q0.measureDistance(tree) < 0) continue;
             break;
         }
@@ -46,19 +47,21 @@ void DemoGUI::runRandomExperiment() {
     for (int i = 0; i < 10; i++) {
         // We want a sequence of 10 true measurements
         while (true) {
-            FT x = fdml::Random::randomDouble() * (boundingBox.topRightPosition.x() - boundingBox.bottomLeftPosition.x()) + boundingBox.bottomLeftPosition.x();
-            FT y = fdml::Random::randomDouble() * (boundingBox.topRightPosition.y() - boundingBox.bottomLeftPosition.y()) + boundingBox.bottomLeftPosition.y();
-            FT z = fdml::Random::randomDouble() * (boundingBox.topRightPosition.z() - boundingBox.bottomLeftPosition.z()) + boundingBox.bottomLeftPosition.z();
+            FT x = fdml::Random::randomDouble() * (boundingBox.topRightPosition.x() - boundingBox.bottomLeftPosition.x()) * 0.25;
+            FT y = fdml::Random::randomDouble() * (boundingBox.topRightPosition.y() - boundingBox.bottomLeftPosition.y()) * 0.25;
+            FT z = fdml::Random::randomDouble() * (boundingBox.topRightPosition.z() - boundingBox.bottomLeftPosition.z()) * 0.25;
             FT r = fdml::Random::randomDouble() * 2 * M_PI;
             fdml::R3xS1 odometry(Point(x, y, z), r);
             fdml::R3xS1 tmpQ = odometry * currentQ;
-            if (tmpQ.position.z() > boundingBox.topRightPosition.z() - 0.3) continue;
+            if (tmpQ.position.z() > boundingBox.topRightPosition.z()) continue;
             if (tmpQ.measureDistance(tree) < 0) continue;
             odometrySequence.push_back(odometry);
             currentQ = odometry * currentQ;
             break;
         }
+        fmt::print("Added odometry {}\n", i);
     }
+    fmt::print("Done sampling odometry\n");
 
     fdml::OdometrySequence groundTruths = fdml::getGroundTruths(odometrySequence, q0);
     measurements = fdml::getMeasurementSequence(tree, groundTruths);
@@ -86,7 +89,7 @@ void DemoGUI::runRandomExperiment() {
         measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
         
 
-    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 12, errorBounds);
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 9, errorBounds);
     auto predictions = fdml::clusterLocations(localization);
 
     for (auto pred : predictions) {

@@ -67,7 +67,7 @@ Scene.StaticMeshes = {
     -- },
     {
         Name = "SM_room",
-        Path = "/fdml/scans/isprs/cs2.obj",
+        Path = "/fdml/scans/isprs/cs3.obj",
         KeepData = true
     },
     {

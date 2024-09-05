@@ -3,7 +3,7 @@
 using namespace le3;
 
 #include <fdml/fdml.h>
-#include <fdml/random.h>
+#include <fdml/fdml_utils.h>
 
 void LoadEnvironment(le3::LE3AssetManager& assets, std::list<Triangle>& triangles, AABBTree& tree, fdml::R3xS1_Voxel& boundingBox);
 fdml::R3xS1 SampleValidOdometry(AABBTree& tree, fdml::R3xS1 q, fdml::R3xS1_Voxel boundingBox);

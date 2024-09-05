@@ -11,7 +11,7 @@ using namespace le3;
 
 #include "demo.h"
 #include <fdml/fdml.h>
-#include <fdml/random.h>
+#include <fdml/fdml_utils.h>
 
 class DemoGUI : public LE3SimpleDemo {
 public:   

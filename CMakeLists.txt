@@ -31,7 +31,7 @@ if (WITH_VISUALIZATION)
 endif()
 
 ############################################################
-#@ Setup OpenMP
+#@ Setup OpenMP & CGAL
 ############################################################
 if(APPLE)
     # set(CMAKE_C_COMPILER clang)
@@ -55,6 +55,7 @@ if(APPLE)
     link_directories("/opt/homebrew/opt/libomp/lib")
 endif()
 
+set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 find_package(CGAL REQUIRED)
 ############################################################
 

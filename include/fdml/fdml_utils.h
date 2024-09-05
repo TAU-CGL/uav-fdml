@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fdml/fdml.h>
+
 #include <ctime>
 
 #include <boost/random/mersenne_twister.hpp>

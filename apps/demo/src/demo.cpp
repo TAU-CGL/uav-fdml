@@ -27,44 +27,16 @@ void DemoGUI::init() {
 }
 
 void DemoGUI::runRandomExperiment() {
-    fdml::R3xS1 q0;
+    
+    fdml::OdometrySequence groundTruths = env.getRoadmap().randomWalk(20);
+    fdml::R3xS1 q0 = groundTruths[0];
+    measurements = fdml::getMeasurementSequence(env.getTree(), groundTruths);
 
-    while (true) {
-            FT x = fdml::Random::randomDouble() * (env.getBoundingBox().topRightPosition.x() - env.getBoundingBox().bottomLeftPosition.x()) + env.getBoundingBox().bottomLeftPosition.x();
-            FT y = fdml::Random::randomDouble() * (env.getBoundingBox().topRightPosition.y() - env.getBoundingBox().bottomLeftPosition.y()) + env.getBoundingBox().bottomLeftPosition.y();
-            FT z = fdml::Random::randomDouble() * (env.getBoundingBox().topRightPosition.z() - env.getBoundingBox().bottomLeftPosition.z()) + env.getBoundingBox().bottomLeftPosition.z();
-            FT r = fdml::Random::randomDouble() * 2 * M_PI;
-            q0 = fdml::R3xS1(Point(x, y, z), r);
-            fmt::print("Trying q0");
-            if (q0.measureDistance(env.getTree()) < 0) continue;
-            break;
-        }
-
-    fdml::R3xS1 currentQ = q0;
     odometrySequence.clear();
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
-
-    for (int i = 0; i < 10; i++) {
-        // We want a sequence of 10 true measurements
-        while (true) {
-            FT x = fdml::Random::randomDouble() * (env.getBoundingBox().topRightPosition.x() - env.getBoundingBox().bottomLeftPosition.x()) * 0.25;
-            FT y = fdml::Random::randomDouble() * (env.getBoundingBox().topRightPosition.y() - env.getBoundingBox().bottomLeftPosition.y()) * 0.25;
-            FT z = fdml::Random::randomDouble() * (env.getBoundingBox().topRightPosition.z() - env.getBoundingBox().bottomLeftPosition.z()) * 0.25;
-            FT r = fdml::Random::randomDouble() * 2 * M_PI;
-            fdml::R3xS1 odometry(Point(x, y, z), r);
-            fdml::R3xS1 tmpQ = odometry * currentQ;
-            if (tmpQ.position.z() > env.getBoundingBox().topRightPosition.z()) continue;
-            if (tmpQ.measureDistance(env.getTree()) < 0) continue;
-            odometrySequence.push_back(odometry);
-            currentQ = odometry * currentQ;
-            break;
-        }
-        fmt::print("Added odometry {}\n", i);
+    for (int i = 1; i < groundTruths.size(); i++) {
+        odometrySequence.push_back(groundTruths[i] / groundTruths[i - 1]);
     }
-    fmt::print("Done sampling odometry\n");
-
-    fdml::OdometrySequence groundTruths = fdml::getGroundTruths(odometrySequence, q0);
-    measurements = fdml::getMeasurementSequence(env.getTree(), groundTruths);
 
     // Do localization
     std::chrono::steady_clock::time_point begin, end;    
@@ -72,10 +44,10 @@ void DemoGUI::runRandomExperiment() {
     begin = std::chrono::steady_clock::now();
 
     fdml::ErrorBounds errorBounds;
-    errorBounds.errorDistance = 0.00;
+    errorBounds.errorDistance = 0.05;
     errorBounds.errorOdometryX = 0.00;
     errorBounds.errorOdometryY = 0.00;
-    errorBounds.errorOdometryZ = 0.00;
+    errorBounds.errorOdometryZ = 0.05;
     errorBounds.errorOdometryR = 0.00;
 
     // Add random errors to odometry and measurements
@@ -156,7 +128,7 @@ void DemoGUI::renderDebug() {
     debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
 
     // Display the roadmap
-    displayRoadmap();
+    // displayRoadmap();
 
     for (auto v : localization) debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
     // if (localization.size() > 0) {

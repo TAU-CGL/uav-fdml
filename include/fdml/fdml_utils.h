@@ -94,21 +94,19 @@ namespace fdml {
             return m_nodes;
         }
 
-        OdometrySequence randomWalk(int numSteps) {
-            OdometrySequence groundTruths, odometry;
+        OdometrySequence randomWalk(int numSteps, FT minDistance = 1.0) {
+            OdometrySequence groundTruths;
             auto currentNode = m_nodes[Random::randomInt() % m_nodes.size()];
-            for (int i = 0; i < numSteps; i++) {
+            groundTruths.push_back(R3xS1(currentNode->p, 0));
+            while (groundTruths.size() < numSteps) {
+                // TODO: Sample by most gradual angle with last node
                 auto nextNode = currentNode->neighbors[Random::randomInt() % currentNode->neighbors.size()];
-                groundTruths.push_back(R3xS1(currentNode->p, 0));
+                if (CGAL::squared_distance(nextNode->p, groundTruths.back().position) >= minDistance * minDistance)
+                    groundTruths.push_back(R3xS1(nextNode->p, 0));
                 currentNode = nextNode;
             }
 
-            odometry.push_back(R3xS1());
-            for (int i = 1; i < groundTruths.size(); i++) {
-                odometry.push_back(groundTruths[i] - groundTruths[i-1]);
-            }
-            
-            return odometry;
+            return groundTruths;
         }
 
 

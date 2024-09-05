@@ -44,7 +44,7 @@ void DemoGUI::runRandomExperiment() {
     odometrySequence.clear();
     odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 15; i++) {
         // We want a sequence of 10 true measurements
         while (true) {
             FT x = fdml::Random::randomDouble() * (boundingBox.topRightPosition.x() - boundingBox.bottomLeftPosition.x()) * 0.25;
@@ -72,24 +72,24 @@ void DemoGUI::runRandomExperiment() {
     begin = std::chrono::steady_clock::now();
 
     fdml::ErrorBounds errorBounds;
-    errorBounds.errorDistance = 0.00;
+    errorBounds.errorDistance = 0.05;
     errorBounds.errorOdometryX = 0.00;
     errorBounds.errorOdometryY = 0.00;
     errorBounds.errorOdometryZ = 0.00;
     errorBounds.errorOdometryR = 0.00;
 
     // Add random errors to odometry and measurements
-    for (auto& odometry : odometrySequence) {
-        odometry.position = Point(odometry.position.x() + 2.0 * errorBounds.errorOdometryX * (fdml::Random::randomDouble() - 0.5),
-                                  odometry.position.y() + 2.0 * errorBounds.errorOdometryY * (fdml::Random::randomDouble() - 0.5),
-                                  odometry.position.z() + 2.0 * errorBounds.errorOdometryZ * (fdml::Random::randomDouble() - 0.5));
-        odometry.orientation = odometry.orientation + 2.0 * errorBounds.errorOdometryR * (fdml::Random::randomDouble() - 0.5);
-    }
-    for (auto& measurement : measurements) 
-        measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
+    // for (auto& odometry : odometrySequence) {
+    //     odometry.position = Point(odometry.position.x() + 2.0 * errorBounds.errorOdometryX * (fdml::Random::randomDouble() - 0.5),
+    //                               odometry.position.y() + 2.0 * errorBounds.errorOdometryY * (fdml::Random::randomDouble() - 0.5),
+    //                               odometry.position.z() + 2.0 * errorBounds.errorOdometryZ * (fdml::Random::randomDouble() - 0.5));
+    //     odometry.orientation = odometry.orientation + 2.0 * errorBounds.errorOdometryR * (fdml::Random::randomDouble() - 0.5);
+    // }
+    // for (auto& measurement : measurements) 
+    //     measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
         
 
-    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 9, errorBounds);
+    localization = fdml::localize(tree, odometrySequence, measurements, boundingBox, 8, errorBounds);
     auto predictions = fdml::clusterLocations(localization);
 
     for (auto pred : predictions) {

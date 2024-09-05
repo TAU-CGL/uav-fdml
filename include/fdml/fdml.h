@@ -76,7 +76,7 @@ namespace fdml {
         }
 
         // Apply the g_tilde offset to the voxel as described in the paper
-        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement) {
+        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds, int iteration) {
             std::vector<FT> thetas;
 
             // Find X axis bounds
@@ -113,8 +113,8 @@ namespace fdml {
             maxY += topRightPosition.y();
 
             // Find Z axis bounds
-            FT minZ = bottomLeftPosition.z() + g_tilde.position.z() - measurement;
-            FT maxZ = topRightPosition.z() + g_tilde.position.z() - measurement;
+            FT minZ = bottomLeftPosition.z() + g_tilde.position.z() - measurement - errorBounds.errorDistance;
+            FT maxZ = topRightPosition.z() + g_tilde.position.z() - measurement + errorBounds.errorDistance;
 
             R3xS1_Voxel v;
             v.bottomLeftPosition = Point(minX, minY, minZ);
@@ -123,8 +123,8 @@ namespace fdml {
             return v;
         }
 
-        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env) {
-            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement);
+        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds, int iteration) {
+            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement, errorBounds, iteration);
             Box query(v.bottomLeftPosition, v.topRightPosition);
             return env.do_intersect(query);
         }
@@ -198,7 +198,7 @@ namespace fdml {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
                     if (measurementSequence[j] < 0) continue;
-                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env)) {
+                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env, errorBounds, j)) {
                         flag = false;
                         break;
                     }

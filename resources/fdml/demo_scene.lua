@@ -60,16 +60,16 @@ Scene.Materials = {
 
 }
 Scene.StaticMeshes = {
-    -- {
-    --     Name = "SM_room",
-    --     Path = "/fdml/scans/240521-141038/240521-141038-scaled.obj",
-    --     KeepData = true
-    -- },
     {
         Name = "SM_room",
-        Path = "/fdml/scans/isprs/cs3.obj",
+        Path = "/fdml/scans/240521-141038/240521-141038-scaled.obj",
         KeepData = true
     },
+    -- {
+    --     Name = "SM_room",
+    --     Path = "/fdml/scans/isprs/cs3.obj",
+    --     KeepData = true
+    -- },
     {
         Name = "SM_cursor",
         Path = "/fdml/cursor.obj",

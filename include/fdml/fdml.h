@@ -38,6 +38,15 @@ namespace fdml {
             return R3xS1(newPosition, newOrientation);
         }
 
+        R3xS1 operator-(const R3xS1& other) {
+            FT newOrientation = orientation - other.orientation;
+            FT x = cos(other.orientation) * (position.x() - other.position.x()) + sin(other.orientation) * (position.y() - other.position.y());
+            FT y = -sin(other.orientation) * (position.x() - other.position.x()) + cos(other.orientation) * (position.y() - other.position.y());
+            FT z = position.z() - other.position.z();
+            Point newPosition(x, y, z);
+            return R3xS1(newPosition, newOrientation);
+        }
+
         double measureDistance(AABBTree& room) {
             Point down(this->position.x(), this->position.y(), this->position.z() - 1.0);
             Ray ray(this->position, down);

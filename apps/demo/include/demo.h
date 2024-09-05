@@ -23,8 +23,7 @@ public:
     void addConfiguration(fdml::R3xS1 q);
 
 protected:
-    AABBTree tree;
-    fdml::R3xS1_Voxel boundingBox;
+    fdml::ExperimentEnv env;
     
     std::vector<fdml::R3xS1> configurations;
     int configurationsHead = 0;
@@ -39,4 +38,5 @@ protected:
 
     void runRandomExperiment();
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
+    void displayRoadmap();
 };

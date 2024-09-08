@@ -5,23 +5,14 @@ void DemoGUI::init() {
 
     LE3GetDatFileSystem().addArchive("fdml", "fdml.dat");
     LE3GetSceneManager().getActiveScene()->load("/fdml/demo_scene.lua");
-
     LE3GetSceneManager().getActiveScene()->getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
     LE3GetSceneManager().getActiveScene()->getMainCamera()->setPitchYaw(0.f, -1.57f);
-
-    // Add gizmo to bottom left (for clatiry)
-    LE3GetSceneManager().getActiveScene()->addCustomObject("gizmo", std::make_shared<LE3Gizmo>());
-    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setHoverable(false);
-    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setDynamicScale(false);
-    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
-    LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
-
     LE3GetActiveScene()->setCulling(false);
+    initGizmo();
 
     /// -------------------------------
 
     FDML_LE3_LoadEnvironment(LE3GetAssetManager(), "SM_room", env); 
-    // runRandomExperiment();
 
     fflush(stdout);
 }
@@ -47,8 +38,6 @@ void DemoGUI::runRandomExperiment() {
     fmt::print("Ground Truth: {}, {}, {}, {}\n", env.q0.position.x(), env.q0.position.y(), env.q0.position.z(), env.q0.orientation);
     fmt::print("--------------------\n");
 
-    
-
     // Result visualization
     configurationsHead = configurations.size();
     for (int idx = 0; idx < configurations.size(); idx++) {
@@ -57,24 +46,23 @@ void DemoGUI::runRandomExperiment() {
         LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(0.f);
         LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setScale(0.f);
     }
-    for (auto q : env.groundTruths) addConfiguration(q);
+    for (auto q : env.groundTruths) addConfigurationMarker(q);
 }
 
 void DemoGUI::update(float deltaTime) {
     
     LE3SimpleDemo::update(deltaTime);
-
-    glm::vec3 cameraPos = LE3GetActiveScene()->getMainCamera()->getPosition();
-    glm::vec3 cameraForward = LE3GetActiveScene()->getMainCamera()->getForward();
-    glm::vec3 cameraRight = LE3GetActiveScene()->getMainCamera()->getRight();
-    glm::vec3 cameraUp = LE3GetActiveScene()->getMainCamera()->getUp();
-    glm::vec3 gizmoPosition = cameraPos + cameraForward * 0.5f + cameraRight * 0.0f + cameraUp * 0.0f;
+    updateGizmo();
 
     ImGui::Begin("UAV FDM-Localization Demo");
     if (ImGui::Button("Randomize"))
         runRandomExperiment();
     ImGui::End();
 }
+
+
+// ------------------------------------------------
+
 
 void DemoGUI::renderDebug() {
     // Draw configurations: measure downards (and draw hitpoint)
@@ -101,7 +89,7 @@ void DemoGUI::renderDebug() {
     for (auto v : env.localization) debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
 }
 
-void DemoGUI::addConfiguration(fdml::R3xS1 q) {
+void DemoGUI::addConfigurationMarker(fdml::R3xS1 q) {
     configurations.push_back(q);
     std::string markerName = format("__marker_{}", configurations.size());
     std::string droneMarkerName = format("__drone_{}", configurations.size());
@@ -134,4 +122,20 @@ void DemoGUI::displayRoadmap() {
             LE3GetVisualDebug().drawDebugLine(p1, p2, color);
         }
     }
+}
+
+void DemoGUI::initGizmo() {
+    // Add gizmo to bottom left (for clatiry)
+    LE3GetSceneManager().getActiveScene()->addCustomObject("gizmo", std::make_shared<LE3Gizmo>());
+    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setHoverable(false);
+    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setDynamicScale(false);
+    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
+    LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
+}
+void DemoGUI::updateGizmo() {
+    glm::vec3 cameraPos = LE3GetActiveScene()->getMainCamera()->getPosition();
+    glm::vec3 cameraForward = LE3GetActiveScene()->getMainCamera()->getForward();
+    glm::vec3 cameraRight = LE3GetActiveScene()->getMainCamera()->getRight();
+    glm::vec3 cameraUp = LE3GetActiveScene()->getMainCamera()->getUp();
+    glm::vec3 gizmoPosition = cameraPos + cameraForward * 0.5f + cameraRight * 0.0f + cameraUp * 0.0f;
 }

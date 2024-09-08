@@ -20,7 +20,7 @@ public:
     void renderDebug();
     void update(float deltaTime);
 
-    void addConfiguration(fdml::R3xS1 q);
+    void addConfigurationMarker(fdml::R3xS1 q);
 
 protected:
     fdml::ExperimentEnv env;
@@ -31,4 +31,7 @@ protected:
     void runRandomExperiment();
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
     void displayRoadmap();
+
+    void initGizmo();
+    void updateGizmo();
 };

@@ -80,7 +80,11 @@ void DemoGUI::renderDebug() {
             glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(1.f, 0.f, 1.f));
     }
 
-    // Debug the algorithm
+    // Draw ground truth location
+    glm::vec3 pos(env.q0.position.x(), env.q0.position.z(), env.q0.position.y());
+    LE3GetVisualDebug().drawDebugBox(pos, glm::quat(), glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.f, 1.f, 0.f));
+
+    // Draw bounding box
     debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
 
     // Display the roadmap

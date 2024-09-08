@@ -8,6 +8,10 @@ if (NOT DEFINED WITH_VISUALIZATION)
     set (WITH_VISUALIZATION true) 
 endif()
 
+if (NOT DEFINED SKIP_PKG_RESOURCES)
+    set (SKIP_PKG_RESOURCES true)
+endif()
+
 ##########################
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
@@ -64,6 +68,7 @@ enable_testing()
 add_subdirectory(tests)
 
 # Copy the resources directory to the build
+if (NOT SKIP_PKG_RESOURCES)
 if (WIN32)
 else()
     add_custom_target(
@@ -73,4 +78,7 @@ else()
 
         DEPENDS ${CMAKE_SOURCE_DIR}/third-party/LightEngine3/bin/pkg-resources
     )
+endif()
+else()
+    message(WARNING "Skipping pkg resources for fdml")
 endif()

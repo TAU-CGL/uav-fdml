@@ -68,7 +68,7 @@ namespace fdml {
             m_nodeMap[p] = m_nodes.back();
         }
 
-        void downsample(int numSamples = 500) {
+        void downsample(int numSamples = 2500) {
             if (m_nodes.size() <= numSamples) return;
             std::vector<std::shared_ptr<RoadmapNode>> newNodes;
             for (int i = 0; i < numSamples; i++) {
@@ -118,6 +118,12 @@ namespace fdml {
     private:
         std::vector<std::shared_ptr<RoadmapNode>> m_nodes;
         std::map<Point, std::shared_ptr<RoadmapNode>> m_nodeMap;
+    };
+
+    struct ExperimentParams {
+        int k = 10;
+        FT delta = 0.05;
+        FT epsilon = 0.05;
     };
 
     // Class that encapsulates the environment of an experiment, and utility functions that help run the experiment
@@ -181,6 +187,10 @@ namespace fdml {
 
             localization = localize(m_tree, odometrySequence, measurements, m_boundingBox, getDepthFromDelta(delta), errorBounds);
             predictions = fdml::clusterLocations(localization);
+        }
+
+        void runExperiment(ExperimentParams params) {
+            runExperiment(params.k, params.delta, params.epsilon, params.epsilon < 1e-6); 
         }
 
     public:

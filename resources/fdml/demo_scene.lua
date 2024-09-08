@@ -9,7 +9,7 @@ Scene.Shaders = {
 Scene.Textures = {
     {
         Name = "T_room",
-        Path = "/fdml/scans/240521-141038/240521-141038.jpg"
+        Path = "/fdml/old/240521-141038/240521-141038.jpg"
     },
     {
         Name = "T_DIF_drone",
@@ -83,7 +83,7 @@ Scene.StaticMeshes = {
     {
         Name = "SM_drone",
         Path = "/fdml/drone/SM_drone.fbx",
-    }
+    },
 }
 Scene.SkeletalMeshes = {
 }
@@ -95,12 +95,12 @@ Scene.Objects = {
         Intensity = 0.7,
         Color = {1, 0.9, 0.9}
     },
-    {
-        Type = "StaticModel",
-        Name = "room",
-        MeshName = "SM_room",
-        MaterialName = "M_room",
-    },
+    -- {
+    --     Type = "StaticModel",
+    --     Name = "room",
+    --     MeshName = "SM_room",
+    --     MaterialName = "M_room",
+    -- },
     {
         Type = "StaticModel",
         Name = "demoDrone",

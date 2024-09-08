@@ -12,7 +12,9 @@ void DemoGUI::init() {
 
     /// -------------------------------
 
-    FDML_LE3_LoadEnvironment(LE3GetAssetManager(), "SM_room", env); 
+    initAvailableEnvs();
+    for (auto path : availableEnvs) fmt::print("{}\n", envDisplayName(path));
+    // FDML_LE3_LoadEnvironment(LE3GetAssetManager(), "SM_room", env); 
 
     fflush(stdout);
 }
@@ -22,7 +24,7 @@ void DemoGUI::runRandomExperiment() {
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
-    env.runExperiment(20, 0.05, 0.01, true);
+    env.runExperiment(params);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
@@ -54,10 +56,70 @@ void DemoGUI::update(float deltaTime) {
     LE3SimpleDemo::update(deltaTime);
     updateGizmo();
 
-    ImGui::Begin("UAV FDM-Localization Demo");
-    if (ImGui::Button("Randomize"))
-        runRandomExperiment();
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(300, LE3GetActiveScene()->getHeight()));
+    ImGui::Begin("UAV FDM-Localization Demo", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+    
+        ImGui::SeparatorText("Environment");
+        static int comboCurr = 0;
+        ImGui::Combo("Env", &comboCurr, &availableEnvsStr[0], availableEnvs.size());
+        if (ImGui::Button("Load")) {
+            loadEnvironment(availableEnvs[comboCurr]);
+        }
+
+        if (selectedEnv != "") {
+            ImGui::SeparatorText("Experiment");
+
+            static float delta, epsilon;
+            ImGui::SliderInt("k", &params.k, 4, 50);
+            ImGui::InputDouble("delta", &params.delta);
+            ImGui::InputDouble("epsilon", &params.epsilon);
+
+            if (ImGui::Button("Run")) {
+                runRandomExperiment();
+            }
+
+        }
+
+
     ImGui::End();
+}
+
+void DemoGUI::loadEnvironment(std::string path) {
+    if (auto obj = LE3GetActiveScene()->getObject<LE3DrawableObject>(envMeshName(selectedEnv))) obj->setHidden(true);
+    selectedEnv = path;
+
+    std::string name = envMeshName(selectedEnv);
+    if (auto obj = LE3GetActiveScene()->getObject<LE3DrawableObject>(name)) obj->setHidden(false);
+    else {
+        LE3GetAssetManager().addStaticMesh(name, selectedEnv, true);
+        LE3GetActiveScene()->addStaticModel(name, name, "M_room");
+    }
+
+    FDML_LE3_LoadEnvironment(LE3GetAssetManager(), name, env);
+}
+
+void DemoGUI::initAvailableEnvs() {
+    for (auto filename : LE3GetDatFileSystem().getFilesFromDir("/fdml/scans")) {
+        // fmt::print("Trying: {}\n", filename);
+        if (filename.ends_with(".obj")) {
+            availableEnvs.push_back(filename);
+            for (auto c : envDisplayName(filename))
+                availableEnvsStr.push_back(c);
+            availableEnvsStr.push_back('\0');
+        }
+    }
+}
+std::string DemoGUI::envDisplayName(std::string path) {
+    //Split by '/' and remove ".obj"
+    std::string res;
+    std::stringstream ss(path);
+    while (std::getline(ss, res, '/'));
+    auto idx = res.find(".obj");
+    return res.substr(0, idx);
+}
+std::string DemoGUI::envMeshName(std::string path) {
+    return "SM_FDML_" + envDisplayName(path);
 }
 
 

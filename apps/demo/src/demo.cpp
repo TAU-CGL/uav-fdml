@@ -16,7 +16,7 @@ void DemoGUI::init() {
     LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
     LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
 
-    LE3GetActiveScene()->setCulling(true);
+    LE3GetActiveScene()->setCulling(false);
 
     /// -------------------------------
 
@@ -28,7 +28,7 @@ void DemoGUI::init() {
 
 void DemoGUI::runRandomExperiment() {
     
-    fdml::OdometrySequence groundTruths = env.getRoadmap().randomWalk(20);
+    fdml::OdometrySequence groundTruths = env.getRoadmap().randomWalk(100);
     fdml::R3xS1 q0 = groundTruths[0];
     measurements = fdml::getMeasurementSequence(env.getTree(), groundTruths);
 
@@ -45,10 +45,9 @@ void DemoGUI::runRandomExperiment() {
 
     fdml::ErrorBounds errorBounds;
     errorBounds.errorDistance = 0.05;
-    errorBounds.errorOdometryX = 0.00;
-    errorBounds.errorOdometryY = 0.00;
+    errorBounds.errorOdometryX = 0.05;
+    errorBounds.errorOdometryY = 0.05;
     errorBounds.errorOdometryZ = 0.05;
-    errorBounds.errorOdometryR = 0.00;
 
     // Add random errors to odometry and measurements
     // for (auto& odometry : odometrySequence) {
@@ -61,7 +60,7 @@ void DemoGUI::runRandomExperiment() {
     //     measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
         
 
-    localization = fdml::localize(env.getTree(), odometrySequence, measurements, env.getBoundingBox(), 8, errorBounds);
+    localization = fdml::localize(env.getTree(), odometrySequence, measurements, env.getBoundingBox(), 10, errorBounds);
     auto predictions = fdml::clusterLocations(localization);
 
     for (auto pred : predictions) {

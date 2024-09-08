@@ -38,7 +38,7 @@ namespace fdml {
             return R3xS1(newPosition, newOrientation);
         }
 
-        R3xS1 operator-(const R3xS1& other) {
+        R3xS1 operator/(const R3xS1& other) {
             FT newOrientation = orientation - other.orientation;
             FT x = cos(other.orientation) * (position.x() - other.position.x()) + sin(other.orientation) * (position.y() - other.position.y());
             FT y = -sin(other.orientation) * (position.x() - other.position.x()) + cos(other.orientation) * (position.y() - other.position.y());
@@ -84,46 +84,62 @@ namespace fdml {
             for (auto& v: temp) v.splitSingleAxis(out, SplitAxis::SPLIT_R);
         }
 
-        // Apply the g_tilde offset to the voxel as described in the paper
-        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds, int iteration) {
+        inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {
             std::vector<FT> thetas;
-
-            // Find X axis bounds
-            thetas.push_back(bottomLeftRotation);
-            thetas.push_back(topRightRotation);
+            thetas.push_back(blR);
+            thetas.push_back(trR);
             for (int k = -3; k <= 3; k++) {
-                FT tmp = atan(-g_tilde.position.y() / g_tilde.position.x()) + k * M_PI;
-                if (tmp >= bottomLeftRotation && tmp <= topRightRotation) thetas.push_back(tmp);
+                FT tmp = atan(-gy / gx) + k * M_PI;
+                if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
             }
-            FT minX = INFTY, maxX = -INFTY;
+            minX = INFTY, maxX = -INFTY;
             for (auto& theta : thetas) {
-                FT x = g_tilde.position.x() * cos(theta) - g_tilde.position.y() * sin(theta);
+                FT x = gx * cos(theta) - gy * sin(theta);
                 minX = MIN(minX, x);
                 maxX = MAX(maxX, x);
             }
+        }
+
+        inline void _calcBoundY(FT blR, FT trR, FT gx, FT gy, FT& minY, FT& maxY) {
+            std::vector<FT> thetas;
+            thetas.push_back(blR);
+            thetas.push_back(trR);
+            for (int k = -3; k <= 3; k++) {
+                FT tmp = atan(gx / gy) + k * M_PI;
+                if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
+            }
+            minY = INFTY, maxY = -INFTY;
+            for (auto& theta : thetas) {
+                FT y = gx * sin(theta) + gy * cos(theta);
+                minY = MIN(minY, y);
+                maxY = MAX(maxY, y);
+            }
+        }
+
+        // Apply the g_tilde offset to the voxel as described in the paper
+        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds, int iteration) {
+            // Find X axis bounds
+            FT minX = INFTY, maxX = -INFTY;
+            FT tmp1, tmp2;
+            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
             minX += bottomLeftPosition.x();
             maxX += topRightPosition.x();
 
             // Find Y axis bounds
-            thetas.clear();
-            thetas.push_back(bottomLeftRotation);
-            thetas.push_back(topRightRotation);
-            for (int k = -3; k <= 3; k++) {
-                FT tmp = atan(g_tilde.position.x() / g_tilde.position.y()) + k * M_PI;
-                if (tmp >= bottomLeftRotation && tmp <= topRightRotation) thetas.push_back(tmp);
-            }
             FT minY = INFTY, maxY = -INFTY;
-            for (auto& theta : thetas) {
-                FT y = g_tilde.position.x() * sin(theta) + g_tilde.position.y() * cos(theta);
-                minY = MIN(minY, y);
-                maxY = MAX(maxY, y);
-            }
+            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
             minY += bottomLeftPosition.y();
             maxY += topRightPosition.y();
 
             // Find Z axis bounds
-            FT minZ = bottomLeftPosition.z() + g_tilde.position.z() - measurement - errorBounds.errorDistance;
-            FT maxZ = topRightPosition.z() + g_tilde.position.z() - measurement + errorBounds.errorDistance;
+            FT minZ = bottomLeftPosition.z() + g_tilde.position.z() - measurement - errorBounds.errorDistance - errorBounds.errorOdometryZ * iteration;
+            FT maxZ = topRightPosition.z() + g_tilde.position.z() - measurement + errorBounds.errorDistance + errorBounds.errorOdometryZ * iteration;
 
             R3xS1_Voxel v;
             v.bottomLeftPosition = Point(minX, minY, minZ);

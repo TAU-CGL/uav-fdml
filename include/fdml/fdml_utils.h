@@ -29,6 +29,11 @@ namespace fdml {
             return dist(instance()->rng);
         }
 
+        static double randomGaussian(double sigma2) {
+            boost::random::normal_distribution<> dist(0.0, sigma2);
+            return dist(instance()->rng);
+        }
+
         static int randomInt() {
             // Like randomDouble but for int
             double d = randomDouble();
@@ -94,7 +99,7 @@ namespace fdml {
             return m_nodes;
         }
 
-        OdometrySequence randomWalk(int numSteps, FT minDistance = 1.0) {
+        OdometrySequence randomWalk(int numSteps, FT minDistance = 2.0) {
             OdometrySequence groundTruths;
             auto currentNode = m_nodes[Random::randomInt() % m_nodes.size()];
             groundTruths.push_back(R3xS1(currentNode->p, 0));
@@ -147,11 +152,55 @@ namespace fdml {
             return m_roadmap;
         }
 
+        void clear() {
+            odometrySequence.clear();
+            groundTruths.clear();
+            measurements.clear();
+            localization.clear();
+        }
+
+        void runExperiment(int k, FT delta, FT epsilon, bool noise) {
+            clear();
+            groundTruths = m_roadmap.randomWalk(k);
+            q0 = groundTruths[0];
+            measurements = getMeasurementSequence(m_tree, groundTruths);
+            odometrySequence.push_back(R3xS1(Point(0, 0, 0), 0));
+            for (int i = 1; i < groundTruths.size(); i++) {
+                odometrySequence.push_back(groundTruths[i] / groundTruths[i - 1]);
+            }
+
+            // Do localization
+            ErrorBounds errorBounds;
+            errorBounds.errorDistance = epsilon;
+            errorBounds.errorOdometryX = epsilon;
+            errorBounds.errorOdometryY = epsilon;
+            errorBounds.errorOdometryZ = epsilon;
+            errorBounds.errorOdometryR = epsilon;
+
+            if (noise) noiseOdometries(epsilon);
+
+            localization = localize(m_tree, odometrySequence, measurements, m_boundingBox, getDepthFromDelta(delta), errorBounds);
+            predictions = fdml::clusterLocations(localization);
+        }
+
+    public:
+        // Experiment results
+        fdml::R3xS1 q0;
+        fdml::OdometrySequence odometrySequence, groundTruths, predictions;
+        fdml::MeasurementSequence measurements;
+        std::vector<fdml::R3xS1_Voxel> localization;
+
     private:
         std::list<Triangle> m_triangles;
         AABBTree m_tree;
         R3xS1_Voxel m_boundingBox;
         Roadmap m_roadmap;
+
+        int getDepthFromDelta(FT delta) {
+            // delta0 is diamater of bounding box
+            FT delta0 = sqrt(CGAL::squared_distance(m_boundingBox.bottomLeftPosition, m_boundingBox.topRightPosition));
+            return (int)ceil(log2(delta0 / delta));
+        }
 
         void buildRoadmap() {
             for (auto t : m_triangles) {
@@ -174,6 +223,17 @@ namespace fdml {
             FT y = Random::randomDouble() * (m_boundingBox.topRightPosition.y() - m_boundingBox.bottomLeftPosition.y()) + m_boundingBox.bottomLeftPosition.y();
             FT z = Random::randomDouble() * (m_boundingBox.topRightPosition.z() - m_boundingBox.bottomLeftPosition.z()) + m_boundingBox.bottomLeftPosition.z();
             return Point(x, y, z);
+        }
+
+        void noiseOdometries(FT epsilon) {
+            for (int i = 0; i < odometrySequence.size(); i++) {
+                odometrySequence[i].position = Point(
+                    odometrySequence[i].position.x() + Random::randomGaussian(epsilon),
+                    odometrySequence[i].position.y() + Random::randomGaussian(epsilon),
+                    odometrySequence[i].position.z() + Random::randomGaussian(epsilon)
+                );
+                odometrySequence[i].orientation += Random::randomGaussian(epsilon);
+            }
         }
     };
 

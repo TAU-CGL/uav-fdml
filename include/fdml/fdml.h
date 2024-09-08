@@ -121,19 +121,43 @@ namespace fdml {
             // Find X axis bounds
             FT minX = INFTY, maxX = -INFTY;
             FT tmp1, tmp2;
-            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            _calcBoundX(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
+            _calcBoundX(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
             minX += bottomLeftPosition.x();
             maxX += topRightPosition.x();
 
             // Find Y axis bounds
             FT minY = INFTY, maxY = -INFTY;
-            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() - errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() - errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            _calcBoundY(bottomLeftRotation, topRightRotation, g_tilde.position.x() + errorBounds.errorOdometryX, g_tilde.position.y() + errorBounds.errorOdometryY, tmp1, tmp2); minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
+            _calcBoundY(bottomLeftRotation, topRightRotation, 
+                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
+                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
+                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
             minY += bottomLeftPosition.y();
             maxY += topRightPosition.y();
 

@@ -20,62 +20,34 @@ void DemoGUI::init() {
 
     /// -------------------------------
 
-    buildAABBTree();    
+    FDML_LE3_LoadEnvironment(LE3GetAssetManager(), "SM_room", env); 
     // runRandomExperiment();
 
     fflush(stdout);
 }
 
 void DemoGUI::runRandomExperiment() {
-    
-    fdml::OdometrySequence groundTruths = env.getRoadmap().randomWalk(100);
-    fdml::R3xS1 q0 = groundTruths[0];
-    measurements = fdml::getMeasurementSequence(env.getTree(), groundTruths);
-
-    odometrySequence.clear();
-    odometrySequence.push_back(fdml::R3xS1(Point(0, 0, 0), 0));
-    for (int i = 1; i < groundTruths.size(); i++) {
-        odometrySequence.push_back(groundTruths[i] / groundTruths[i - 1]);
-    }
-
-    // Do localization
     std::chrono::steady_clock::time_point begin, end;    
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
-    fdml::ErrorBounds errorBounds;
-    errorBounds.errorDistance = 0.005;
-    errorBounds.errorOdometryX = 0.005;
-    errorBounds.errorOdometryY = 0.005;
-    errorBounds.errorOdometryZ = 0.005;
-
-    // Add random errors to odometry and measurements
-    // for (auto& odometry : odometrySequence) {
-    //     odometry.position = Point(odometry.position.x() + 2.0 * errorBounds.errorOdometryX * (fdml::Random::randomDouble() - 0.5),
-    //                               odometry.position.y() + 2.0 * errorBounds.errorOdometryY * (fdml::Random::randomDouble() - 0.5),
-    //                               odometry.position.z() + 2.0 * errorBounds.errorOdometryZ * (fdml::Random::randomDouble() - 0.5));
-    //     odometry.orientation = odometry.orientation + 2.0 * errorBounds.errorOdometryR * (fdml::Random::randomDouble() - 0.5);
-    // }
-    // for (auto& measurement : measurements) 
-    //     measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
-        
-
-    localization = fdml::localize(env.getTree(), odometrySequence, measurements, env.getBoundingBox(), 8, errorBounds);
-    auto predictions = fdml::clusterLocations(localization);
-
-    for (auto pred : predictions) {
-        fmt::print("Prediction: {}, {}, {}, {}\n", pred.position.x(), pred.position.y(), pred.position.z(), pred.orientation);
-        FT error = sqrt((pred.position.x() - q0.position.x()) * (pred.position.x() - q0.position.x()) +
-                   (pred.position.y() - q0.position.y()) * (pred.position.y() - q0.position.y()) +
-                   (pred.position.z() - q0.position.z()) * (pred.position.z() - q0.position.z()));
-        fmt::print("Error: {}\n", error); 
-    }
-    fmt::print("Ground Truth: {}, {}, {}, {}\n", q0.position.x(), q0.position.y(), q0.position.z(), q0.orientation);
-    fmt::print("--------------------\n");
+    env.runExperiment(20, 0.05, 0.01, true);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
     print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
+
+    for (auto pred : env.predictions) {
+        fmt::print("Prediction: {}, {}, {}, {}\n", pred.position.x(), pred.position.y(), pred.position.z(), pred.orientation);
+        FT error = sqrt((pred.position.x() - env.q0.position.x()) * (pred.position.x() - env.q0.position.x()) +
+                   (pred.position.y() - env.q0.position.y()) * (pred.position.y() - env.q0.position.y()) +
+                   (pred.position.z() - env.q0.position.z()) * (pred.position.z() - env.q0.position.z()));
+        fmt::print("Error: {}\n", error); 
+    }
+    fmt::print("Ground Truth: {}, {}, {}, {}\n", env.q0.position.x(), env.q0.position.y(), env.q0.position.z(), env.q0.orientation);
+    fmt::print("--------------------\n");
+
+    
 
     // Result visualization
     configurationsHead = configurations.size();
@@ -85,7 +57,7 @@ void DemoGUI::runRandomExperiment() {
         LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(0.f);
         LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setScale(0.f);
     }
-    for (auto q : groundTruths) addConfiguration(q);
+    for (auto q : env.groundTruths) addConfiguration(q);
 }
 
 void DemoGUI::update(float deltaTime) {
@@ -97,13 +69,10 @@ void DemoGUI::update(float deltaTime) {
     glm::vec3 cameraRight = LE3GetActiveScene()->getMainCamera()->getRight();
     glm::vec3 cameraUp = LE3GetActiveScene()->getMainCamera()->getUp();
     glm::vec3 gizmoPosition = cameraPos + cameraForward * 0.5f + cameraRight * 0.0f + cameraUp * 0.0f;
-    // LE3GetSceneManager().getActiveScene()->getObject("gizmo")->getTransform().setPosition(cameraPos + glm::vec3(0.5f, 0.f, 0.f));
 
     ImGui::Begin("UAV FDM-Localization Demo");
     if (ImGui::Button("Randomize"))
         runRandomExperiment();
-    if (badMeasurement)
-        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Bad measurement (not enough samples). Please randomize again.");
     ImGui::End();
 }
 
@@ -129,36 +98,7 @@ void DemoGUI::renderDebug() {
     // Display the roadmap
     // displayRoadmap();
 
-    for (auto v : localization) debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
-    // if (localization.size() > 0) {
-    //     auto v = localization[0];
-    //     for (int j = 0; j < tildeOdometries.size(); j++) {
-    //         debugDrawVoxel(v.forwardOdometry(tildeOdometries[j], measurements[j])[0], glm::vec3(1.f, 1.f, 0.f));
-    //     }
-    // }
-}
-
-void DemoGUI::buildAABBTree() {
-    auto mesh = LE3GetAssetManager().getStaticMesh("SM_room");
-    auto vertices = mesh->getKeptData();
-    auto indices = mesh->getKeptIndices();
-
-    std::chrono::steady_clock::time_point begin, end;    
-    std::chrono::duration<double, std::milli> __duration;
-    begin = std::chrono::steady_clock::now();
-    
-    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
-    for (int i = 0; i < indices.size(); i += 3) {
-        Point p1(vertices[indices[i]].position[0], vertices[indices[i]].position[2], vertices[indices[i]].position[1]);
-        Point p2(vertices[indices[i + 1]].position[0], vertices[indices[i + 1]].position[2], vertices[indices[i + 1]].position[1]);
-        Point p3(vertices[indices[i + 2]].position[0], vertices[indices[i + 2]].position[2], vertices[indices[i + 2]].position[1]);
-        Triangle t(p1, p2, p3);
-        triangles.push_back(t);
-    }
-    env.loadTriangles(triangles);
-    end = std::chrono::steady_clock::now();
-    __duration = end - begin;
-    print("Constructing environment: {} [sec]\n", __duration.count());
+    for (auto v : env.localization) debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
 }
 
 void DemoGUI::addConfiguration(fdml::R3xS1 q) {

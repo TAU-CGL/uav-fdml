@@ -44,10 +44,10 @@ void DemoGUI::runRandomExperiment() {
     begin = std::chrono::steady_clock::now();
 
     fdml::ErrorBounds errorBounds;
-    errorBounds.errorDistance = 0.05;
-    errorBounds.errorOdometryX = 0.05;
-    errorBounds.errorOdometryY = 0.05;
-    errorBounds.errorOdometryZ = 0.05;
+    errorBounds.errorDistance = 0.005;
+    errorBounds.errorOdometryX = 0.005;
+    errorBounds.errorOdometryY = 0.005;
+    errorBounds.errorOdometryZ = 0.005;
 
     // Add random errors to odometry and measurements
     // for (auto& odometry : odometrySequence) {
@@ -60,7 +60,7 @@ void DemoGUI::runRandomExperiment() {
     //     measurement += 2.0 * errorBounds.errorDistance * (fdml::Random::randomDouble() - 0.5);
         
 
-    localization = fdml::localize(env.getTree(), odometrySequence, measurements, env.getBoundingBox(), 10, errorBounds);
+    localization = fdml::localize(env.getTree(), odometrySequence, measurements, env.getBoundingBox(), 8, errorBounds);
     auto predictions = fdml::clusterLocations(localization);
 
     for (auto pred : predictions) {

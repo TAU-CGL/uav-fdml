@@ -18,7 +18,7 @@ namespace po = boost::program_options;
         std::chrono::duration<double, std::milli> __duration;\
         desc.add_options()\
             ("help", "produce help message")\
-            ("num_experiments", po::value<int>(&__num_experiments)->default_value(1000), "number of experiments");
+            ("num_experiments", po::value<int>(&__num_experiments)->default_value(10), "number of experiments");
 
 #define END_EXPERIMENT() return 0; }
 
@@ -30,7 +30,7 @@ namespace po = boost::program_options;
     po::variables_map vm;\
     po::store(po::parse_command_line(argc, argv, desc), vm);\
     po::notify(vm);\
-    if (vm.count("help")) { std::cout << desc << std::endl; return 1; }
+    // if (vm.count("help")) { std::cout << desc << std::endl; return 1; }
 
 
 #define START_RUN() \
@@ -40,4 +40,4 @@ namespace po = boost::program_options;
 #define END_RUN() }\
     end = std::chrono::steady_clock::now();\
     __duration = end - begin;\
-    std::cout << __duration.count() << std::endl;
+    // std::cout << __duration.count() << std::endl;

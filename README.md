@@ -35,19 +35,13 @@ Tested also on WSL on Windows 11.
     sudo apt update
     sudo apt install -y build-essential cmake libfmt-dev libcgal-dev liblua5.4-dev \
         libglew-dev libsdl2-dev libassimp-dev libbullet-dev libglm-dev libcxxopts-dev libboost-dev \
-        libboost-container-dev libgtest-dev python3 python-is-python3
+        libboost-container-dev libgtest-dev py0ppipthon3 python3-pip python-is-python3 \
+        python3-tqdm python3-pandas
     ```
 
 2. Build the project:
 
     ```
-    cmake -B build
-    make -C build
+    cmake -B build & make -C build
     ```
 
-
-
-Dependencies:
-* boost
-* fmt
-* gtest 

@@ -126,6 +126,16 @@ namespace fdml {
         FT epsilon = 0.05;
     };
 
+    struct ExperimentMetrics {
+        bool conservativeSuccess;
+        FT errorXYZ, errorTheta;
+        int numVoxels, numClusters;
+        FT localizationVolume, localizationVolumePercentage;
+        double timeMiliseconds;
+        
+        bool resultsReady = false;
+    };
+
     // Class that encapsulates the environment of an experiment, and utility functions that help run the experiment
     class ExperimentEnv {
     public:
@@ -184,21 +194,58 @@ namespace fdml {
             errorBounds.errorOdometryR = epsilon;
 
             if (noise) noiseOdometries(epsilon);
+            
+            std::chrono::steady_clock::time_point begin, end;    
+            std::chrono::duration<double, std::milli> __duration;
+            begin = std::chrono::steady_clock::now();
 
-            localization = localize(m_tree, odometrySequence, measurements, m_boundingBox, getDepthFromDelta(delta), errorBounds);
-            predictions = fdml::clusterLocations(localization);
+                localization = localize(m_tree, odometrySequence, measurements, m_boundingBox, getDepthFromDelta(delta), errorBounds);
+                predictions = fdml::clusterLocations(localization);
+            
+            end = std::chrono::steady_clock::now();
+            __duration = end - begin;
+
+            // Populate metrics
+            metrics.timeMiliseconds = __duration.count();
+            updateExperimentMetrics();
         }
 
         void runExperiment(ExperimentParams params) {
             runExperiment(params.k, params.delta, params.epsilon, params.epsilon < 1e-6); 
         }
 
+        void updateExperimentMetrics() {
+            metrics.localizationVolume = 0;
+            metrics.numVoxels = localization.size();
+            metrics.numClusters = predictions.size();
+            for (auto v : localization) {
+                if (v.contains(q0)) metrics.conservativeSuccess = true;
+                metrics.localizationVolume += v.volume();
+            }
+            metrics.localizationVolumePercentage = metrics.localizationVolume / m_boundingBox.volume();
+
+            // Compute best error
+            metrics.errorXYZ = INFTY;
+            metrics.errorTheta = INFTY;
+            for (auto p : predictions) {
+                FT error = sqrt((p.position.x() - q0.position.x()) * (p.position.x() - q0.position.x()) +
+                    (p.position.y() - q0.position.y()) * (p.position.y() - q0.position.y()) +
+                    (p.position.z() - q0.position.z()) * (p.position.z() - q0.position.z()));
+                metrics.errorXYZ = MIN(metrics.errorXYZ, error);
+                metrics.errorTheta = MIN(metrics.errorTheta, abs(p.orientation - q0.orientation));
+            }
+            
+            metrics.resultsReady = true;
+        }
+
     public:
-        // Experiment results
+        // Experiment results; after running `runExperiment`, these are guaranteed to have the correct values of the last run
         fdml::R3xS1 q0;
         fdml::OdometrySequence odometrySequence, groundTruths, predictions;
         fdml::MeasurementSequence measurements;
         std::vector<fdml::R3xS1_Voxel> localization;
+        ExperimentMetrics metrics;
+
 
     private:
         std::list<Triangle> m_triangles;

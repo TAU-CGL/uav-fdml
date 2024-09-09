@@ -84,6 +84,13 @@ namespace fdml {
             for (auto& v: temp) v.splitSingleAxis(out, SplitAxis::SPLIT_R);
         }
 
+        FT volume() {
+            return (topRightPosition.x() - bottomLeftPosition.x()) * 
+                (topRightPosition.y() - bottomLeftPosition.y()) * 
+                (topRightPosition.z() - bottomLeftPosition.z()) * 
+                (topRightRotation - bottomLeftRotation);
+        }
+
         inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {
             std::vector<FT> thetas;
             thetas.push_back(blR);

@@ -81,6 +81,18 @@ void DemoGUI::update(float deltaTime) {
 
         }
 
+        if (env.metrics.resultsReady) {
+            ImGui::SeparatorText("Results");
+            ImGui::Text("Time: %.2f ms", env.metrics.timeMiliseconds);
+            ImGui::Text("Localization Volume: %.6f", env.metrics.localizationVolume);
+            ImGui::Text("Localization Volume Percentage: %.4f\%", env.metrics.localizationVolumePercentage * 100);
+            ImGui::Text("Num Voxels: %d", env.metrics.numVoxels);
+            ImGui::Text("Num Clusters: %d", env.metrics.numClusters);
+            ImGui::Text("Error XYZ: %.2f", env.metrics.errorXYZ);
+            ImGui::Text("Error Theta: %.2f", env.metrics.errorTheta);
+            ImGui::Text("Is Conservative? [%s]", env.metrics.conservativeSuccess ? "Yes" : "No");
+        }
+
 
     ImGui::End();
 }

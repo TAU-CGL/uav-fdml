@@ -42,6 +42,6 @@ Tested also on WSL on Windows 11.
 2. Build the project:
 
     ```
-    cmake -B build & make -C build
+    cmake -B build && make -C build
     ```
 

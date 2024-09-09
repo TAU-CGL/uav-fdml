@@ -127,13 +127,24 @@ namespace fdml {
     };
 
     struct ExperimentMetrics {
-        bool conservativeSuccess;
-        FT errorXYZ, errorTheta;
-        int numVoxels, numClusters;
-        FT localizationVolume, localizationVolumePercentage;
-        double timeMiliseconds;
+        int conservativeSuccess = 0;
+        FT errorXYZ = 0, errorTheta = 0;
+        int numVoxels = 0, numClusters = 0;
+        FT localizationVolume = 0, localizationVolumePercentage = 0;
+        double timeMiliseconds = 0;
         
         bool resultsReady = false;
+
+        void operator+=(const ExperimentMetrics& other) {
+            conservativeSuccess += other.conservativeSuccess;
+            errorXYZ += other.errorXYZ;
+            errorTheta += other.errorTheta;
+            numVoxels += other.numVoxels;
+            numClusters += other.numClusters;
+            localizationVolume += other.localizationVolume;
+            localizationVolumePercentage += other.localizationVolumePercentage;
+            timeMiliseconds += other.timeMiliseconds;
+        }
     };
 
     // Class that encapsulates the environment of an experiment, and utility functions that help run the experiment

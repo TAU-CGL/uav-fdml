@@ -271,7 +271,6 @@ namespace fdml {
                 }
             }
             m_roadmap.downsample();
-            fmt::println("Building roadmap with {} nodes", m_roadmap.getNodes().size());
             m_roadmap.buildRoadmap();
         }
 

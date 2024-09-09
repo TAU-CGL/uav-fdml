@@ -134,8 +134,13 @@ namespace fdml {
         double timeMiliseconds = 0;
         
         bool resultsReady = false;
+        int numTimeouts = 0;
 
         void operator+=(const ExperimentMetrics& other) {
+            if (other.numVoxels == 0) {
+                numTimeouts++;
+                return;
+            }
             conservativeSuccess += other.conservativeSuccess;
             errorXYZ += other.errorXYZ;
             errorTheta += other.errorTheta;

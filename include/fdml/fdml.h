@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ctime>
+
 #include <omp.h>
 
 #include <CGAL/Simple_cartesian.h>
@@ -23,6 +25,7 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primit
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 // Fix for windows
 #endif
+#define TIMEOUT 10
 
 namespace fdml {
     struct R3xS1 {
@@ -250,6 +253,12 @@ namespace fdml {
         voxels.push_back(bb1);
         voxels.push_back(bb2);
 
+
+        // please write me code
+        std::chrono::steady_clock::time_point begin, curr;    
+        std::chrono::duration<double, std::milli> __duration;
+        begin = std::chrono::steady_clock::now();
+
         for (int i = 0; i < recursionDepth; i++) {
             localization.clear();
             #pragma omp parallel for
@@ -269,6 +278,12 @@ namespace fdml {
             }
             voxels.clear();
             for (auto v : localization) v.split(voxels);
+
+            curr = std::chrono::steady_clock::now();
+            __duration = curr - begin;
+            if (__duration.count() > TIMEOUT * 1000) {
+                return VoxelCloud();
+            }
         }
 
         return localization;
@@ -281,8 +296,10 @@ namespace fdml {
             center = Point(center.x() + (v.bottomLeftPosition.x() + v.topRightPosition.x()) / 2, center.y() + (v.bottomLeftPosition.y() + v.topRightPosition.y()) / 2, center.z() + (v.bottomLeftPosition.z() + v.topRightPosition.z()) / 2);
             rotation += (v.bottomLeftRotation + v.topRightRotation) / 2;
         }
-        center = Point(center.x() / locations.size(), center.y() / locations.size(), center.z() / locations.size());
-        rotation /= locations.size();
+        if (locations.size() > 0) {
+            center = Point(center.x() / locations.size(), center.y() / locations.size(), center.z() / locations.size());
+            rotation /= locations.size();
+        }
         return {R3xS1(center, rotation)};
 
         // std::vector<VoxelCloud> clusters;

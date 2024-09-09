@@ -37,14 +37,16 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
     END_RUN();
 
     
-    fmt::print("time: {}\n", results.timeMiliseconds / (double)__num_experiments);
-    fmt::print("conservativeSuccess: {}\n", results.conservativeSuccess / (double)__num_experiments);
-    fmt::print("errorXYZ: {}\n", results.errorXYZ / (double)__num_experiments);
-    fmt::print("errorTheta: {}\n", results.errorTheta / (double)__num_experiments);
-    fmt::print("numVoxels: {}\n", results.numVoxels / (double)__num_experiments);
-    fmt::print("numClusters: {}\n", results.numClusters / (double)__num_experiments);
-    fmt::print("localizationVolume: {}\n", results.localizationVolume / (double)__num_experiments);
-    fmt::print("localizationVolumePercentage: {}\n", results.localizationVolumePercentage / (double)__num_experiments);
+    fmt::print("numTimeouts: {}\n", results.numTimeouts);
+    double numexps = (double)(__num_experiments - results.numTimeouts);
+    fmt::print("time: {}\n", results.timeMiliseconds / numexps);
+    fmt::print("conservativeSuccess: {}\n", results.conservativeSuccess / numexps);
+    fmt::print("errorXYZ: {}\n", results.errorXYZ / numexps);
+    fmt::print("errorTheta: {}\n", results.errorTheta / numexps);
+    fmt::print("numVoxels: {}\n", results.numVoxels / numexps);
+    fmt::print("numClusters: {}\n", results.numClusters / numexps);
+    fmt::print("localizationVolume: {}\n", results.localizationVolume / numexps);
+    fmt::print("localizationVolumePercentage: {}\n", results.localizationVolumePercentage / numexps);
 
 
 END_EXPERIMENT()

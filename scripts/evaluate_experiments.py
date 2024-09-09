@@ -7,6 +7,8 @@ import pandas as pd
 
 from utils import *
 
+SKIP_EXISTING = False
+
 EXPERIMENT_ARGS = {
     "environment": [env.replace("resources", "") for env in get_available_environments("resources/fdml/scans/")],
     "k": list(range(4, 51, 2)),
@@ -48,6 +50,11 @@ if __name__ == "__main__":
     arg_names = list(EXPERIMENT_ARGS.keys())
 
     for combo in tqdm.tqdm(combinations):
+        if SKIP_EXISTING:
+            query = f"SELECT * FROM results WHERE {' AND '.join([f'{arg} = ?' for arg in arg_names])}"
+            if db.cursor.execute(query, combo).fetchone() is not None:
+                continue
+
         # Run the experiment
         args = dict(zip(arg_names, combo))
         params = []

@@ -17,12 +17,12 @@ EXPERIMENT_ARGS = {
     "k": [10, 20, 30, 40, 50],
     "delta": [0.05],
     "epsilon": [0.0, 0.01, 0.05],
-    "num_experiments": [10],
+    "num_experiments": [1],
 }
 EXPERIMENT_NAME = "experiment_accuracy"
 RESULTS_DIR = "results"
 DB_PATH = os.path.join(RESULTS_DIR, "results.db")
-TIMEOUT = 60
+TIMEOUT = 600
 
 def init_table(db: DB):
     inner_query = ""

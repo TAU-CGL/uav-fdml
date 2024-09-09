@@ -20,6 +20,9 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primit
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
 #define INFTY 1e10
+#ifndef M_PI
+#define M_PI 3.14159265358979323846 // Fix for windows
+#endif
 
 namespace fdml {
     struct R3xS1 {
@@ -249,7 +252,7 @@ namespace fdml {
 
         for (int i = 0; i < recursionDepth; i++) {
             localization.clear();
-            #pragma omp parallel for
+            // #pragma omp parallel for
             for (auto v : voxels) {
                 bool flag = true;
                 for (int j = 0; j < tildeOdometries.size(); j++) {
@@ -260,7 +263,7 @@ namespace fdml {
                     }
                 }
                 if (flag) {
-                    #pragma omp critical
+                    // #pragma omp critical
                     localization.push_back(v);
                 }
             }

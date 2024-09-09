@@ -21,7 +21,10 @@ class DB(object):
         self.cursor = self.conn.cursor()
 
 def get_bin_path():
-    return os.path.join(__file__.split("scripts")[0], "bin")
+    if os.name == "nt":
+        return os.path.join(__file__.split("scripts")[0], "bin", "Release")
+    else:
+        return os.path.join(__file__.split("scripts")[0], "bin")
 
 def get_executable_path(name: str):
     executable_path = os.path.join(get_bin_path(), name)

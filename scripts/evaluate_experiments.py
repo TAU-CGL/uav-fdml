@@ -10,7 +10,7 @@ from utils import *
 SKIP_EXISTING = False
 
 EXPERIMENT_ARGS = {
-    "environment": [env.replace("resources", "") for env in get_available_environments("resources/fdml/scans/")],
+    "environment": [env.replace("resources", "").replace('\\', '/') for env in get_available_environments("resources/fdml/scans/")],
     "k": list(range(4, 51, 2)),
     "delta": [0.1, 0.05, 0.025, 0.01],
     "epsilon": [0.0, 0.005, 0.01, 0.02, 0.05, 0.1],

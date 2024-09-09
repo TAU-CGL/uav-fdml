@@ -7,18 +7,22 @@ import pandas as pd
 
 from utils import *
 
-SKIP_EXISTING = False
+SKIP_EXISTING = True
 
 EXPERIMENT_ARGS = {
     "environment": [env.replace("resources", "").replace('\\', '/') for env in get_available_environments("resources/fdml/scans/")],
-    "k": list(range(4, 51, 2)),
-    "delta": [0.1, 0.05, 0.025, 0.01],
-    "epsilon": [0.0, 0.005, 0.01, 0.02, 0.05, 0.1],
+    # "k": list(range(4, 51, 2)),
+    # "delta": [0.1, 0.05, 0.025, 0.01],
+    # "epsilon": [0.0, 0.005, 0.01, 0.02, 0.05, 0.1],
+    "k": [10, 20, 30, 40, 50],
+    "delta": [0.05],
+    "epsilon": [0.0, 0.01, 0.05],
     "num_experiments": [10],
 }
 EXPERIMENT_NAME = "experiment_accuracy"
 RESULTS_DIR = "results"
 DB_PATH = os.path.join(RESULTS_DIR, "results.db")
+TIMEOUT = 60
 
 def init_table(db: DB):
     inner_query = ""
@@ -61,7 +65,11 @@ if __name__ == "__main__":
         for k, v in args.items():
             params.append(f"--{k}")
             params.append(str(v))
-        output = subprocess.check_output([get_executable_path(EXPERIMENT_NAME)] + params, cwd=get_bin_path()).decode("utf-8")
+        try:
+            output = subprocess.check_output([get_executable_path(EXPERIMENT_NAME)] + params, cwd=get_bin_path(), timeout=TIMEOUT).decode("utf-8")
+        except subprocess.TimeoutExpired:
+            print(f"Timeout for {args}")
+            output = ""
         
         # Parse the results
         results = {}

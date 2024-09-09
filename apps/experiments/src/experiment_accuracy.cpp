@@ -25,7 +25,7 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
     params.delta = delta;
     params.epsilon = epsilon;
     
-    LE3Application app(std::make_unique<LE3GameLogic>());
+    LE3Application app;
     app.init();
     le3::LE3GetDatFileSystem().addArchive("fdml", "fdml.dat");
     assets.addStaticMesh(envName, environment, true);

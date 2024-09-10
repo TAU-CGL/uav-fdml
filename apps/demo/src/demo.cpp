@@ -24,6 +24,7 @@ void DemoGUI::runRandomExperiment() {
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
+    params.enforceGoodTrajectory = true;
     env.runExperiment(params);
 
     end = std::chrono::steady_clock::now();

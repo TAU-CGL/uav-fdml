@@ -25,7 +25,7 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primit
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 // Fix for windows
 #endif
-#define TIMEOUT 10
+#define TIMEOUT 30
 
 namespace fdml {
     struct R3xS1 {

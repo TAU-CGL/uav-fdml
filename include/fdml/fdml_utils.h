@@ -99,16 +99,24 @@ namespace fdml {
             return m_nodes;
         }
 
-        OdometrySequence randomWalk(int numSteps, FT minDistance = 2.0) {
+        OdometrySequence randomWalk(int numSteps, FT minDistance = 3.0) {
             OdometrySequence groundTruths;
             auto currentNode = m_nodes[Random::randomInt() % m_nodes.size()];
             groundTruths.push_back(R3xS1(currentNode->p, 0));
+            int numTries = 0;
             while (groundTruths.size() < numSteps) {
                 // TODO: Sample by most gradual angle with last node
                 auto nextNode = currentNode->neighbors[Random::randomInt() % currentNode->neighbors.size()];
                 if (CGAL::squared_distance(nextNode->p, groundTruths.back().position) >= minDistance * minDistance)
                     groundTruths.push_back(R3xS1(nextNode->p, 0));
                 currentNode = nextNode;
+
+                if (numTries > 100) {
+                    minDistance -= 0.5;
+                    if (minDistance < 0) minDistance = 0;
+                    numTries = 0;
+                }
+                numTries++;
             }
 
             return groundTruths;
@@ -124,6 +132,8 @@ namespace fdml {
         int k = 10;
         FT delta = 0.05;
         FT epsilon = 0.05;
+
+        bool enforceGoodTrajectory = false;
     };
 
     struct ExperimentMetrics {
@@ -191,10 +201,9 @@ namespace fdml {
             localization.clear();
         }
 
-        void runExperiment(int k, FT delta, FT epsilon, bool noise) {
+        void runExperiment(int k, FT delta, FT epsilon, bool noise, bool enforceGoodTrajectory = false) {
             clear();
-            groundTruths = m_roadmap.randomWalk(k);
-            q0 = groundTruths[0];
+            generateRandomWalk(k, enforceGoodTrajectory);
             measurements = getMeasurementSequence(m_tree, groundTruths);
             odometrySequence.push_back(R3xS1(Point(0, 0, 0), 0));
             for (int i = 1; i < groundTruths.size(); i++) {
@@ -227,7 +236,37 @@ namespace fdml {
         }
 
         void runExperiment(ExperimentParams params) {
-            runExperiment(params.k, params.delta, params.epsilon, params.epsilon < 1e-6); 
+            runExperiment(params.k, params.delta, params.epsilon, params.epsilon < 1e-6, params.enforceGoodTrajectory); 
+        }
+
+        void generateRandomWalk(int k, bool enforceGoodTrajectory) {
+            groundTruths = m_roadmap.randomWalk(k);
+            int numTries = 0;
+            if (enforceGoodTrajectory) {
+                while (!isGoodTrajectory()) {
+                    groundTruths = m_roadmap.randomWalk(k);
+                    numTries++;
+                    if (numTries > 100) break;
+                }
+            }
+            fmt::print("Good trajectory == {}\n", isGoodTrajectory());
+            fflush(stdout);
+            q0 = groundTruths[0];
+        }
+
+        bool isGoodTrajectory() {
+            FT d0 = groundTruths[0].measureDistance(m_tree);
+            FT d1 = groundTruths[1].measureDistance(m_tree) - (groundTruths[1].position.z() - groundTruths[0].position.z());
+            FT d2 = groundTruths[2].measureDistance(m_tree) - (groundTruths[2].position.z() - groundTruths[0].position.z());
+            FT d3 = groundTruths[3].measureDistance(m_tree) - (groundTruths[3].position.z() - groundTruths[0].position.z());
+            FT d4 = groundTruths[4].measureDistance(m_tree) - (groundTruths[4].position.z() - groundTruths[0].position.z());
+            fmt::print("d0 = {}, d1 = {}, d2 = {}, d3 = {}, d4 = {}\n", d0, d1, d2, d3, d4);
+            fflush(stdout);
+            // Check that they are all pairwise different (with difference at least 1e-1)
+            FT eps = 2e-1;
+            return (abs(d0 - d1) > eps) && (abs(d0 - d2) > eps) && (abs(d0 - d3) > eps) && 
+                (abs(d1 - d2) > eps) && (abs(d1 - d3) > eps) && (abs(d2 - d3) > eps) && 
+                (abs(d0 - d4) > eps) && (abs(d1 - d4) > eps) && (abs(d2 - d4) > eps) && (abs(d3 - d4) > eps);
         }
 
         void updateExperimentMetrics() {

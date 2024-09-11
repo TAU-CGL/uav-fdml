@@ -230,7 +230,7 @@ def main():
     global buttons
     global run_recv_thread
     global new_image
-    global log_file
+    global log_file #Save img and height
 
     if not os.path.isdir(RAW_DIR):
         os.mkdir(RAW_DIR)

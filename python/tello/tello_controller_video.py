@@ -3,6 +3,7 @@ Modified version of the `joystick_and_video` example from tellopy.
 Captures the raw video and height distance measuremetns.
 """
 
+import os
 import sys
 import time
 import threading
@@ -55,6 +56,8 @@ new_image = None
 flight_data = None
 log_data = None
 buttons = None
+log_file = None
+frame_cnt = 0
 speed = 100
 throttle = 0.0
 yaw = 0.0
@@ -185,6 +188,8 @@ def recv_thread(drone):
     global new_image
     global flight_data
     global log_data
+    global log_file
+    global frame_cnt
 
     print('start recv_thread()')
     try:
@@ -196,10 +201,13 @@ def recv_thread(drone):
                 if 0 < frame_skip:
                     frame_skip = frame_skip - 1
                     continue
+                
                 start_time = time.time()
                 image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
-
-                
+                frame_cnt += 1
+                img_name = str(frame_cnt).zfill(6) + ".png"
+                cv2.imwrite(os.path.join(RAW_DIR, img_name), image)
+                log_file.write(f"[{start_time}]: {img_name} \t {0.0} [m]\n")
 
                 if flight_data:
                     draw_text(image, 'TelloPy: joystick_and_video ' + str(flight_data), 0)
@@ -222,6 +230,12 @@ def main():
     global buttons
     global run_recv_thread
     global new_image
+    global log_file
+
+    if not os.path.isdir(RAW_DIR):
+        os.mkdir(RAW_DIR)
+    log_file = open(os.path.join(RAW_DIR, "log.txt"), "w")
+
     pygame.init()
     pygame.joystick.init()
     current_image = None
@@ -266,6 +280,7 @@ def main():
         traceback.print_exception(exc_type, exc_value, exc_traceback)
         print(e)
 
+    log_file.close()
     run_recv_thread = False
     cv2.destroyAllWindows()
     drone.quit()

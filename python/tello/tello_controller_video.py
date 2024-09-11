@@ -1,246 +1,276 @@
 """
-Modified original code from: https://github.com/GiovanniGrieco/Joy
+Modified version of the `joystick_and_video` example from tellopy.
+Captures the raw video and height distance measuremetns.
 """
-import collections
+
+import sys
 import time
-import os
-from threading import Thread
+import threading
+import traceback
+# from subprocess import Popen, PIPE
 
-from scapy import sendrecv
-from scapy.layers.inet import IP, UDP
-from scapy.packet import Raw
+import av
+import cv2
+import numpy
+import pygame
+import tellopy
+import pygame.locals
 
-if os.name == 'nt':
-    os.environ['PYSDL2_DLL_PATH'] = os.curdir
-
-import sdl2
-import sdl2.ext
+RAW_DIR = "raw"
 
 
-class JoystickController:
-    """
-    Control your DJI Tello drone using your Joystick, directly from your PC.
-    Be sure that networking is already setup and the drone is reachable.
-    """
+class JoystickF310:
+    # d-pad
+    UP = -1  # UP
+    DOWN = -1  # DOWN
+    ROTATE_LEFT = -1  # LEFT
+    ROTATE_RIGHT = -1  # RIGHT
 
-    def __init__(self):
-        """
-        Initialize useful constants and routing mapping to setup controller actions.
-        """
-        self._running = True
-        self._command_queue = collections.deque()
+    # bumper triggers
+    TAKEOFF = 5  # R1
+    LAND = 4  # L1
+    # UNUSED = 7 #R2
+    # UNUSED = 6 #L2
 
-        ###
-        # You may want to customize the constants and button mapping below
-        # to suit your specific needs and Joystick characteristics.
-        ###
-        self._joystick = self._init_joystick()
-        self._AXIS_DEAD = 2500
-        self._AXIS_MAX_VAL = 32767
-        self._axis_state = {
-            'roll':  0,
-            'quota': 0,
-            'yaw':   0,
-            'pitch': 0
-        }
-        self._event_map = {
-            'SELECT':  self._land,
-            'START':   self._takeoff,
-            'A':       self._emergency_land,
-            'Y':       self._command,
-            'LEFT_X':  self._set_roll,
-            'LEFT_Y':  self._set_pitch,
-            'RIGHT_X': self._set_yaw,
-            'RIGHT_Y': self._set_quota
-        }
-        self._button_map = ('A', 'B', 'X', 'Y', 'LB', 'RB', 'SELECT', 'START', 'JL', 'JR')
-        self._axis_map = ('LEFT_X', 'LEFT_Y', 'LT', 'RIGHT_X', 'RIGHT_Y', 'RT')
+    # buttons
+    FORWARD = 3  # Y
+    BACKWARD = 0  # B
+    LEFT = 2  # X
+    RIGHT = 1  # A
 
-        print(f'Connected to {sdl2.SDL_JoystickName(self._joystick).decode()}')
+    # axis
+    LEFT_X = 0
+    LEFT_Y = 1
+    RIGHT_X = 3
+    RIGHT_Y = 4
+    LEFT_X_REVERSE = 1.0
+    LEFT_Y_REVERSE = -1.0
+    RIGHT_X_REVERSE = 1.0
+    RIGHT_Y_REVERSE = -1.0
+    DEADZONE = 0.08
 
-    def run(self):
-        """
-        Main runtime procedure.
-        Manage threads, an empty loop and shutdown procedure in case of program termination.
-        """
-        threads = (
-            Thread(target=self._receive_command_loop, daemon=True),
-            Thread(target=self._send_command_loop, daemon=False),
-        )
+prev_flight_data = None
+run_recv_thread = True
+new_image = None
+flight_data = None
+log_data = None
+buttons = None
+speed = 100
+throttle = 0.0
+yaw = 0.0
+pitch = 0.0
+roll = 0.0
 
-        for t in threads:
-            t.start()
+def handler(event, sender, data, **args):
+    global prev_flight_data
+    global flight_data
+    global log_data
+    drone = sender
+    if event is drone.EVENT_FLIGHT_DATA:
+        if prev_flight_data != str(data):
+            print(data)
+            prev_flight_data = str(data)
+        flight_data = data
+    elif event is drone.EVENT_LOG_DATA:
+        log_data = data
+    else:
+        print('event="%s" data=%s' % (event.getname(), str(data)))
 
-        self._run_loop()
 
-        # if we exit from the run loop for some reason, shutdown
-        self._command_queue.clear()
-        self._land()
+def update(old, new, max_delta=0.3):
+    if abs(old - new) <= max_delta:
+        res = new
+    else:
+        res = 0.0
+    return res
 
-        for t in threads:
-            t.join()
 
-    @staticmethod
-    def _init_joystick():
-        """
-        Initialize joystick using SDL library. Note that it is automatically
-        chosen the first enumerated joystick.
+def handle_input_event(drone, e):
+    global speed
+    global throttle
+    global yaw
+    global pitch
+    global roll
+    if e.type == pygame.locals.JOYAXISMOTION:
+        # ignore small input values (Deadzone)
+        if -buttons.DEADZONE <= e.value and e.value <= buttons.DEADZONE:
+            e.value = 0.0
+        if e.axis == buttons.LEFT_Y:
+            throttle = update(throttle, e.value * buttons.LEFT_Y_REVERSE)
+            drone.set_throttle(throttle)
+        if e.axis == buttons.LEFT_X:
+            yaw = update(yaw, e.value * buttons.LEFT_X_REVERSE)
+            drone.set_yaw(yaw)
+        if e.axis == buttons.RIGHT_Y:
+            pitch = update(pitch, e.value *
+                           buttons.RIGHT_Y_REVERSE)
+            drone.set_pitch(pitch)
+        if e.axis == buttons.RIGHT_X:
+            roll = update(roll, e.value * buttons.RIGHT_X_REVERSE)
+            drone.set_roll(roll)
+    elif e.type == pygame.locals.JOYHATMOTION:
+        if e.value[0] < 0:
+            drone.counter_clockwise(speed)
+        if e.value[0] == 0:
+            drone.clockwise(0)
+        if e.value[0] > 0:
+            drone.clockwise(speed)
+        if e.value[1] < 0:
+            drone.down(speed)
+        if e.value[1] == 0:
+            drone.up(0)
+        if e.value[1] > 0:
+            drone.up(speed)
+    elif e.type == pygame.locals.JOYBUTTONDOWN:
+        if e.button == buttons.LAND:
+            drone.land()
+        elif e.button == buttons.UP:
+            drone.up(speed)
+        elif e.button == buttons.DOWN:
+            drone.down(speed)
+        elif e.button == buttons.ROTATE_RIGHT:
+            drone.clockwise(speed)
+        elif e.button == buttons.ROTATE_LEFT:
+            drone.counter_clockwise(speed)
+        elif e.button == buttons.FORWARD:
+            drone.forward(speed)
+        elif e.button == buttons.BACKWARD:
+            drone.backward(speed)
+        elif e.button == buttons.RIGHT:
+            drone.right(speed)
+        elif e.button == buttons.LEFT:
+            drone.left(speed)
+    elif e.type == pygame.locals.JOYBUTTONUP:
+        if e.button == buttons.TAKEOFF:
+            if throttle != 0.0:
+                print('###')
+                print('### throttle != 0.0 (This may hinder the drone from taking off)')
+                print('###')
+            drone.takeoff()
+        elif e.button == buttons.UP:
+            drone.up(0)
+        elif e.button == buttons.DOWN:
+            drone.down(0)
+        elif e.button == buttons.ROTATE_RIGHT:
+            drone.clockwise(0)
+        elif e.button == buttons.ROTATE_LEFT:
+            drone.counter_clockwise(0)
+        elif e.button == buttons.FORWARD:
+            drone.forward(0)
+        elif e.button == buttons.BACKWARD:
+            drone.backward(0)
+        elif e.button == buttons.RIGHT:
+            drone.right(0)
+        elif e.button == buttons.LEFT:
+            drone.left(0)
 
-        Returns
-        -------
-        The SDL Joystick object.
-        """
-        sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING)
-        time.sleep(0.1)
+def draw_text(image, text, row):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.5
+        font_size = 24
+        font_color = (255,255,255)
+        bg_color = (0,0,0)
+        d = 2
+        height, width = image.shape[:2]
+        left_mergin = 10
+        if row < 0:
+            pos =  (left_mergin, height + font_size * row + 1)
+        else:
+            pos =  (left_mergin, font_size * (row + 1))
+        cv2.putText(image, text, pos, font, font_scale, bg_color, 6)
+        cv2.putText(image, text, pos, font, font_scale, font_color, 1)
 
-        njoysticks = sdl2.SDL_NumJoysticks()
-        print(njoysticks)
-        if njoysticks < 1:
-            raise RuntimeError(f'No joysticks connected!')
+def recv_thread(drone):
+    global run_recv_thread
+    global new_image
+    global flight_data
+    global log_data
 
-        print('Joysticks available:')
-        for i in range(njoysticks):
-            joy = sdl2.SDL_JoystickOpen(i)
-            print(f'  - {sdl2.SDL_JoystickName(joy).decode()}')
-
-        return sdl2.SDL_JoystickOpen(0)
-
-    def _run_loop(self):
-        """
-        Main running loop, just to check and handle interrupt signal.
-        """
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            self._running = False
-
-    def _receive_command_loop(self):
-        """
-        Manage Joystick events and call their mapped function.
-        """
-        while self._running:
-            for event in sdl2.ext.get_events():
-                try:
-                    if event.type == sdl2.SDL_JOYBUTTONDOWN:
-                        self._event_map[self._button_map[event.jbutton.button]]()
-                    elif event.type == sdl2.SDL_JOYAXISMOTION:
-                        if abs(event.jaxis.value) > self._AXIS_DEAD:
-                            self._event_map[self._axis_map[event.jaxis.axis]](event.jaxis.value)
-                except KeyError:
-                    pass
-
-    def _send_command_loop(self):
-        """
-        Handle command execution using hard real-time, FCFS-based scheduling policy.
-        """
-        while self._running:
-            try:
-                cmd = self._command_queue.pop()
-
-                answer = sendrecv.sr1(IP(dst='192.168.10.1') / UDP(dport=8889) / cmd,
-                                    verbose=1,
-                                    timeout=0.2)
-                try:
-                    response = answer[Raw].load.decode()
-                    print(f'EXE {cmd}: {response}')
-                except TypeError:
-                    print(f'EXE {cmd}: unknown')
+    print('start recv_thread()')
+    try:
+        container = av.open(drone.get_video_stream())
+        # skip first 300 frames
+        frame_skip = 300
+        while True:
+            for frame in container.decode(video=0):
+                if 0 < frame_skip:
+                    frame_skip = frame_skip - 1
                     continue
+                start_time = time.time()
+                image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
 
-            except IndexError:  # nothing to schedule, retry another time
-                time.sleep(0.5)
-                continue
+                
 
-    def _command(self):
-        """
-        Take control of the DJI Tello.
-        """
-        print('Pressed Command button')
-        self._command_queue.append('command')
+                if flight_data:
+                    draw_text(image, 'TelloPy: joystick_and_video ' + str(flight_data), 0)
+                if log_data:
+                    draw_text(image, 'MVO: ' + str(log_data.mvo), -3)
+                    draw_text(image, ('IMU: ' + str(log_data.imu))[0:52], -2)
+                    draw_text(image, '     ' + ('IMU: ' + str(log_data.imu))[52:], -1)
+                new_image = image
+                if frame.time_base < 1.0/60:
+                    time_base = 1.0/60
+                else:
+                    time_base = frame.time_base
+                frame_skip = int((time.time() - start_time)/time_base)
+    except Exception as ex:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+        print(ex)
 
-    def _land(self, force=False):
-        """
-        Schedule drone landing.
+def main():
+    global buttons
+    global run_recv_thread
+    global new_image
+    pygame.init()
+    pygame.joystick.init()
+    current_image = None
 
-        Parameters
-        ----------
-        force: clear out FCFS queue, in case of absolute necessity.
-        """
-        print('Pressed Land button')
-        if force:
-            self._command_queue.clear()
+    try:
+        js = pygame.joystick.Joystick(0)
+        js.init()
+        js_name = js.get_name()
+        print('Joystick name: ' + js_name)
+        if js_name in ('Logitech Gamepad F310', 'Controller (Gamepad F310)'):
+            buttons = JoystickF310
+        else:
+            raise Exception("NO CONTROLLER")
+    
+    except pygame.error:
+        pass
 
-        self._command_queue.append('land')
+    if buttons is None:
+        print('no supported joystick found')
+        return
 
-    def _emergency_land(self):
-        """
-        Schedule drone emergency landing.
-        Caution: don't harm the drone!
-        """
-        self._command_queue.clear()
-        self._command_queue.append('emergency')
+    drone = tellopy.Tello()
+    drone.connect()
+    drone.subscribe(drone.EVENT_FLIGHT_DATA, handler)
+    drone.subscribe(drone.EVENT_LOG_DATA, handler)
+    threading.Thread(target=recv_thread, args=[drone]).start()
 
-    def _takeoff(self):
-        """
-        Schedule drone takeoff.
-        Note: if drone is not taking off, check your battery charge level!
-        """
-        print('Pressed Takeoff button')
-        self._command_queue.append('takeoff')
+    try:
+        while 1:
+            # loop with pygame.event.get() is too much tight w/o some sleep
+            time.sleep(0.01)
+            for e in pygame.event.get():
+                handle_input_event(drone, e)
+            if current_image is not new_image:
+                cv2.imshow('Tello', new_image)
+                current_image = new_image
+                cv2.waitKey(1)
+    except KeyboardInterrupt as e:
+        print(e)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+        print(e)
 
-    def _set_roll(self, raw_val):
-        """
-        Set roll axis value.
-        """
-        val = int(raw_val * 100 / self._AXIS_MAX_VAL)
-
-        if self._axis_state['roll'] != val:
-            self._axis_state['roll'] = val
-            self._dispatch_axis_update()
-
-    def _set_quota(self, raw_val):
-        """
-        Set quota axis value.
-        """
-        val = -int(raw_val * 100 / self._AXIS_MAX_VAL)
-
-        if self._axis_state['quota'] != val:
-            self._axis_state['quota'] = val
-            self._dispatch_axis_update()
-
-    def _set_yaw(self, raw_val):
-        """
-        Set yaw axis value.
-        """
-        val = int(raw_val * 100 / self._AXIS_MAX_VAL)
-
-        if self._axis_state['yaw'] != val:
-            self._axis_state['yaw'] = val
-            self._dispatch_axis_update()
-
-    def _set_pitch(self, raw_val):
-        """
-        Set pitch axis value.
-        """
-        val = -int(raw_val * 100 / self._AXIS_MAX_VAL)
-
-        if self._axis_state['pitch'] != val:
-            self._axis_state['pitch'] = val
-            self._dispatch_axis_update()
-
-    def _dispatch_axis_update(self):
-        """
-        Schedule an update of the pitch-roll-quota-yaw of the drone, tipically
-        managed using Joystick analog sticks.
-        """
-        # print(f'RC: {self._axis_state}')  # Caution: this message is highly frequent
-        self._command_queue.append(f'rc {self._axis_state["roll"]} '
-                                f'{self._axis_state["pitch"]} '
-                                f'{self._axis_state["quota"]} '
-                                f'{self._axis_state["yaw"]}')
+    run_recv_thread = False
+    cv2.destroyAllWindows()
+    drone.quit()
+    exit(1)
 
 
 if __name__ == '__main__':
-    ctrl = JoystickController()
-    ctrl.run()
+    main()

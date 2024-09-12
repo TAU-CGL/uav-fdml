@@ -249,7 +249,10 @@ def recv_thread(drone):
                 frame_cnt += 1
                 img_name = str(frame_cnt).zfill(6) + ".png"
                 cv2.imwrite(os.path.join(RAW_DIR, img_name), image)
-                log_file.write(f"[{start_time}]: {img_name} \t {0.0} [m]\n")
+                try:
+                    log_file.write(f"[{start_time}]: {img_name} \t{flight_data.height}|{flight_data.fly_time} [m]\t{log_data.mvo}\t{log_data.imu}\n")
+                except:
+                    pass
 
                 if flight_data:
                     draw_text(image, 'TelloPy: joystick_and_video ' + str(flight_data), 0)

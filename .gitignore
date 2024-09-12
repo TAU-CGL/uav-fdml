@@ -1,6 +1,7 @@
 build/
 bin/
 lib/
+raw/
 .vscode/
 
 .DS_Store

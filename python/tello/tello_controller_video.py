@@ -50,6 +50,25 @@ class JoystickF310:
     RIGHT_Y_REVERSE = -1.0
     DEADZONE = 0.08
 
+controls = {
+    'w': 'forward',
+    's': 'backward',
+    'a': 'left',
+    'd': 'right',
+    'space': 'up',
+    'left shift': 'down',
+    'right shift': 'down',
+    'q': 'counter_clockwise',
+    'e': 'clockwise',
+    # arrow keys for fast turns and altitude adjustments
+    'left': lambda drone, speed: drone.counter_clockwise(speed*2),
+    'right': lambda drone, speed: drone.clockwise(speed*2),
+    'up': lambda drone, speed: drone.up(speed*2),
+    'down': lambda drone, speed: drone.down(speed*2),
+    'tab': lambda drone, speed: drone.takeoff(),
+    'backspace': lambda drone, speed: drone.land(),
+}
+
 prev_flight_data = None
 run_recv_thread = True
 new_image = None
@@ -166,6 +185,29 @@ def handle_input_event(drone, e):
             drone.right(0)
         elif e.button == buttons.LEFT:
             drone.left(0)
+    # WASD for movement
+    elif e.type == pygame.locals.KEYDOWN:
+        print('+' + pygame.key.name(e.key))
+        keyname = pygame.key.name(e.key)
+        if keyname == 'escape':
+            drone.quit()
+            exit(0)
+        if keyname in controls:
+            key_handler = controls[keyname]
+            if type(key_handler) == str:
+                getattr(drone, key_handler)(speed)
+            else:
+                key_handler(drone, speed)
+
+    elif e.type == pygame.locals.KEYUP:
+        print('-' + pygame.key.name(e.key))
+        keyname = pygame.key.name(e.key)
+        if keyname in controls:
+            key_handler = controls[keyname]
+            if type(key_handler) == str:
+                getattr(drone, key_handler)(0)
+            else:
+                key_handler(drone, 0)
 
 def draw_text(image, text, row):
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -248,14 +290,16 @@ def main():
         if js_name in ('Logitech Gamepad F310', 'Controller (Gamepad F310)'):
             buttons = JoystickF310
         else:
-            raise Exception("NO CONTROLLER")
+            # raise Exception("NO CONTROLLER")
+            buttons = None
+            print("Defaulting to keyboard only::")
     
     except pygame.error:
         pass
 
-    if buttons is None:
-        print('no supported joystick found')
-        return
+    # if buttons is None:
+        # print('no supported joystick found')
+        # return
 
     drone = tellopy.Tello()
     drone.connect()

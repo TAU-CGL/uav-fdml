@@ -250,7 +250,9 @@ def recv_thread(drone):
                 img_name = str(frame_cnt).zfill(6) + ".png"
                 cv2.imwrite(os.path.join(RAW_DIR, img_name), image)
                 try:
-                    log_file.write(f"[{start_time}]: {img_name} \t{flight_data.height}|{flight_data.fly_time} [m]\t{log_data.mvo}\t{log_data.imu}\n")
+                    line = f"[{start_time}]: {img_name} \t{flight_data.height}|{flight_data.fly_time} [m]\t{log_data.mvo}\t{log_data.imu}\n"
+                    log_file.write(line)
+                    print(line)
                 except:
                     pass
 

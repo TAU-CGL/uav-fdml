@@ -292,7 +292,7 @@ namespace fdml {
             FT d2 = groundTruths[2].measureDistance(m_tree) - (groundTruths[2].position.z() - groundTruths[0].position.z());
             FT d3 = groundTruths[3].measureDistance(m_tree) - (groundTruths[3].position.z() - groundTruths[0].position.z());
             FT d4 = groundTruths[4].measureDistance(m_tree) - (groundTruths[4].position.z() - groundTruths[0].position.z());
-            fmt::print("d0 = {}, d1 = {}, d2 = {}, d3 = {}, d4 = {}\n", d0, d1, d2, d3, d4);
+            // fmt::print("d0 = {}, d1 = {}, d2 = {}, d3 = {}, d4 = {}\n", d0, d1, d2, d3, d4);
             fflush(stdout);
             // Check that they are all pairwise different (with difference at least 1e-1)
             FT eps = 2e-1;

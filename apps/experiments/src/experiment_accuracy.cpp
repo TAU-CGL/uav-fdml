@@ -13,7 +13,7 @@ const std::string envName = "environment";
 BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environment with random valid k")
     ADD_OPTION(int, k, 50, "number of odometries");
     ADD_OPTION(double, delta, 0.1, "maximum box diameter (in 4D) for recursion");
-    ADD_OPTION(double, epsilon, 0.05, "distance measurement and odometry error");
+    ADD_OPTION(double, epsilon, 0.02, "distance measurement and odometry error");
     ADD_OPTION(std::string, environment, "/fdml/scans/isprs/cs2.obj", "Path to OBJ file of the scene");
     ADD_OPTION(bool, egt, true, "Enforces good trajectory");
     PARSE_ARGS();

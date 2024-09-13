@@ -112,7 +112,7 @@ namespace fdml {
                 currentNode = nextNode;
 
                 if (numTries > 100) {
-                    minDistance -= 0.5;
+                    minDistance -= 0.25;
                     if (minDistance < 0) minDistance = 0;
                     numTries = 0;
                 }
@@ -203,8 +203,12 @@ namespace fdml {
 
         void runExperiment(int k, FT delta, FT epsilon, bool noise, bool enforceGoodTrajectory = false) {
             clear();
-            generateRandomWalk(k, enforceGoodTrajectory);
-            measurements = getMeasurementSequence(m_tree, groundTruths);
+            if (predeterminedPath == "") {
+                generateRandomWalk(k, enforceGoodTrajectory);
+                measurements = getMeasurementSequence(m_tree, groundTruths);
+            } else {
+                loadTrajectory();
+            }
             odometrySequence.push_back(R3xS1(Point(0, 0, 0), 0));
             for (int i = 1; i < groundTruths.size(); i++) {
                 odometrySequence.push_back(groundTruths[i] / groundTruths[i - 1]);
@@ -212,7 +216,7 @@ namespace fdml {
 
             // Do localization
             ErrorBounds errorBounds;
-            errorBounds.errorDistance = epsilon;
+            errorBounds.errorDistance = epsilon * 2;
             errorBounds.errorOdometryX = epsilon;
             errorBounds.errorOdometryY = epsilon;
             errorBounds.errorOdometryZ = epsilon;
@@ -251,6 +255,21 @@ namespace fdml {
             }
             fmt::print("Good trajectory == {}\n", isGoodTrajectory());
             fflush(stdout);
+            q0 = groundTruths[0];
+        }
+
+        void loadTrajectory() {
+            // Trajectories are of the form "dx,dy,dz,tof\n"
+            // The string predeterminedPath is the trajectory itself
+            std::istringstream ss(predeterminedPath);
+            std::string line;
+            while (std::getline(ss, line)) {
+                std::istringstream lss(line);
+                FT dx, dy, dz, tof;
+                lss >> dx >> dy >> dz >> tof;
+                groundTruths.push_back(R3xS1(Point(dx, dy, dz), 0));
+                measurements.push_back(tof);
+            }
             q0 = groundTruths[0];
         }
 
@@ -300,6 +319,7 @@ namespace fdml {
         fdml::MeasurementSequence measurements;
         std::vector<fdml::R3xS1_Voxel> localization;
         ExperimentMetrics metrics;
+        std::string predeterminedPath;
 
 
     private:

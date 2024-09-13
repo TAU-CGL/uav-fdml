@@ -323,7 +323,8 @@ def main():
                 current_image = new_image
                 cv2.waitKey(1)
     except KeyboardInterrupt as e:
-        print(e)
+        # print(edd
+        pass
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback)

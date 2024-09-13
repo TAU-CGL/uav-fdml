@@ -28,6 +28,7 @@ protected:
     std::vector<std::string> availableEnvs;
     std::vector<char> availableEnvsStr;
     std::string selectedEnv = "";
+    std::string predeterminedPath = "";
     
     std::vector<fdml::R3xS1> configurations;
     int configurationsHead = 0;

@@ -2,6 +2,7 @@
 
 #include <fdml/fdml.h>
 
+#include <set>
 #include <ctime>
 #include <list>
 #include <vector>
@@ -141,6 +142,7 @@ namespace fdml {
         FT errorXYZ = 0, errorTheta = 0;
         int numVoxels = 0, numClusters = 0;
         FT localizationVolume = 0, localizationVolumePercentage = 0;
+        FT localizationVolumeXY = 0, localizationVolumePercentageXY = 0;
         double timeMiliseconds = 0;
         
         bool resultsReady = false;
@@ -158,6 +160,8 @@ namespace fdml {
             numClusters += other.numClusters;
             localizationVolume += other.localizationVolume;
             localizationVolumePercentage += other.localizationVolumePercentage;
+            localizationVolumeXY += other.localizationVolumeXY;
+            localizationVolumePercentageXY += other.localizationVolumePercentageXY;
             timeMiliseconds += other.timeMiliseconds;
         }
     };
@@ -298,14 +302,21 @@ namespace fdml {
         }
 
         void updateExperimentMetrics() {
+            std::set<std::pair<std::pair<FT, FT>, std::pair<FT, FT>>> xyProj;
             metrics.localizationVolume = 0;
             metrics.numVoxels = localization.size();
             metrics.numClusters = predictions.size();
             for (auto v : localization) {
                 if (v.contains(q0)) metrics.conservativeSuccess = true;
                 metrics.localizationVolume += v.volume();
+                xyProj.insert(std::pair<std::pair<FT, FT>, std::pair<FT, FT>>(
+                    std::pair<FT, FT>(v.bottomLeftPosition.x(), v.bottomLeftPosition.y()),
+                    std::pair<FT, FT>(v.topRightPosition.x(), v.topRightPosition.y())
+                ));
             }
+            if (xyProj.size() > 0) metrics.localizationVolumeXY = xyProj.size() * localization[0].volumeXY();
             metrics.localizationVolumePercentage = metrics.localizationVolume / m_boundingBox.volume();
+            metrics.localizationVolumePercentageXY = metrics.localizationVolumeXY / m_boundingBox.volumeXY();
 
             // Compute best error
             metrics.errorXYZ = INFTY;

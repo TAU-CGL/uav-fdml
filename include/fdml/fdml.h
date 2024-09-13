@@ -97,6 +97,11 @@ namespace fdml {
                 (topRightRotation - bottomLeftRotation);
         }
 
+        FT volumeXY() {
+            return (topRightPosition.x() - bottomLeftPosition.x()) * 
+                (topRightPosition.y() - bottomLeftPosition.y());
+        }
+
         inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {
             std::vector<FT> thetas;
             thetas.push_back(blR);

@@ -22,7 +22,7 @@ EXPERIMENT_ARGS = {
 EXPERIMENT_NAME = "experiment_accuracy"
 RESULTS_DIR = "results"
 DB_PATH = os.path.join(RESULTS_DIR, "results.db")
-TIMEOUT = 110
+TIMEOUT = 1100
 
 def init_table(db: DB):
     inner_query = ""

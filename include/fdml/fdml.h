@@ -286,6 +286,12 @@ namespace fdml {
             }
         }
 
+        VoxelCloud clean;
+        for (auto v : localization) {
+            if (!env.do_intersect(Box(v.bottomLeftPosition, v.topRightPosition))) clean.push_back(v);
+        }
+        localization = clean;
+
         return localization;
     }
 

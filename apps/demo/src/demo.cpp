@@ -76,9 +76,11 @@ void DemoGUI::update(float deltaTime) {
             ImGui::InputDouble("delta", &params.delta);
             ImGui::InputDouble("epsilon", &params.epsilon);
 
-            static char traj[1 << 16];
+            static char traj[1 << 16], q0str[1<<14];
             ImGui::InputTextMultiline("Trajectory", traj, IM_ARRAYSIZE(traj));
+            ImGui::InputText("q0", q0str, IM_ARRAYSIZE(q0str));
             env.predeterminedPath = traj;
+            env.actualQ0 = q0str;
 
             if (ImGui::Button("Run")) {
                 runRandomExperiment();

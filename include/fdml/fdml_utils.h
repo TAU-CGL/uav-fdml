@@ -216,7 +216,7 @@ namespace fdml {
 
             // Do localization
             ErrorBounds errorBounds;
-            errorBounds.errorDistance = epsilon * 2;
+            errorBounds.errorDistance = epsilon;
             errorBounds.errorOdometryX = epsilon;
             errorBounds.errorOdometryY = epsilon;
             errorBounds.errorOdometryZ = epsilon;
@@ -270,7 +270,16 @@ namespace fdml {
                 groundTruths.push_back(R3xS1(Point(dx, dy, dz), 0));
                 measurements.push_back(tof);
             }
-            q0 = groundTruths[0];
+
+            if (actualQ0 != "") {
+                std::istringstream q0ss(actualQ0);
+                FT x, y, z, theta;
+                q0ss >> x >> y >> z >> theta;
+                q0 = R3xS1(Point(x, y, z), theta);
+                for (int i = 0; i < groundTruths.size(); i++) {
+                    groundTruths[i] = groundTruths[i] * q0;
+                }
+            } else q0 = groundTruths[0];
         }
 
         bool isGoodTrajectory() {
@@ -319,7 +328,7 @@ namespace fdml {
         fdml::MeasurementSequence measurements;
         std::vector<fdml::R3xS1_Voxel> localization;
         ExperimentMetrics metrics;
-        std::string predeterminedPath;
+        std::string predeterminedPath, actualQ0;
 
 
     private:

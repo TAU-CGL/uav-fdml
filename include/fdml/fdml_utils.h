@@ -142,7 +142,7 @@ namespace fdml {
         FT errorXYZ = 0, errorTheta = 0;
         int numVoxels = 0, numClusters = 0;
         FT localizationVolume = 0, localizationVolumePercentage = 0;
-        FT localizationVolumeXY = 0, localizationVolumePercentageXY = 0;
+        FT localizationVolumeXYT = 0, localizationVolumePercentageXYT = 0;
         double timeMiliseconds = 0;
         
         bool resultsReady = false;
@@ -160,8 +160,8 @@ namespace fdml {
             numClusters += other.numClusters;
             localizationVolume += other.localizationVolume;
             localizationVolumePercentage += other.localizationVolumePercentage;
-            localizationVolumeXY += other.localizationVolumeXY;
-            localizationVolumePercentageXY += other.localizationVolumePercentageXY;
+            localizationVolumeXYT += other.localizationVolumeXYT;
+            localizationVolumePercentageXYT += other.localizationVolumePercentageXYT;
             timeMiliseconds += other.timeMiliseconds;
         }
     };
@@ -257,7 +257,7 @@ namespace fdml {
                     if (numTries > 100) break;
                 }
             }
-            fmt::print("Good trajectory == {}\n", isGoodTrajectory());
+            // fmt::print("Good trajectory == {}\n", isGoodTrajectory());
             fflush(stdout);
             q0 = groundTruths[0];
         }
@@ -293,7 +293,7 @@ namespace fdml {
             FT d3 = groundTruths[3].measureDistance(m_tree) - (groundTruths[3].position.z() - groundTruths[0].position.z());
             FT d4 = groundTruths[4].measureDistance(m_tree) - (groundTruths[4].position.z() - groundTruths[0].position.z());
             // fmt::print("d0 = {}, d1 = {}, d2 = {}, d3 = {}, d4 = {}\n", d0, d1, d2, d3, d4);
-            fflush(stdout);
+            // fflush(stdout);
             // Check that they are all pairwise different (with difference at least 1e-1)
             FT eps = 2e-1;
             return (abs(d0 - d1) > eps) && (abs(d0 - d2) > eps) && (abs(d0 - d3) > eps) && 
@@ -302,21 +302,22 @@ namespace fdml {
         }
 
         void updateExperimentMetrics() {
-            std::set<std::pair<std::pair<FT, FT>, std::pair<FT, FT>>> xyProj;
+            std::set<std::tuple<std::pair<FT, FT>, std::pair<FT, FT>, std::pair<FT, FT>>> xytProj;
             metrics.localizationVolume = 0;
             metrics.numVoxels = localization.size();
             metrics.numClusters = predictions.size();
             for (auto v : localization) {
                 if (v.contains(q0)) metrics.conservativeSuccess = true;
                 metrics.localizationVolume += v.volume();
-                xyProj.insert(std::pair<std::pair<FT, FT>, std::pair<FT, FT>>(
+                xytProj.insert(std::tuple<std::pair<FT, FT>, std::pair<FT, FT>, std::pair<FT, FT>>(
                     std::pair<FT, FT>(v.bottomLeftPosition.x(), v.bottomLeftPosition.y()),
-                    std::pair<FT, FT>(v.topRightPosition.x(), v.topRightPosition.y())
+                    std::pair<FT, FT>(v.topRightPosition.x(), v.topRightPosition.y()),
+                    std::pair<FT, FT>(v.bottomLeftRotation, v.topRightRotation)
                 ));
             }
-            if (xyProj.size() > 0) metrics.localizationVolumeXY = xyProj.size() * localization[0].volumeXY();
+            if (xytProj.size() > 0) metrics.localizationVolumeXYT = xytProj.size() * localization[0].volumeXYT();
             metrics.localizationVolumePercentage = metrics.localizationVolume / m_boundingBox.volume();
-            metrics.localizationVolumePercentageXY = metrics.localizationVolumeXY / m_boundingBox.volumeXY();
+            metrics.localizationVolumePercentageXYT = metrics.localizationVolumeXYT / m_boundingBox.volumeXYT();
 
             // Compute best error
             metrics.errorXYZ = INFTY;

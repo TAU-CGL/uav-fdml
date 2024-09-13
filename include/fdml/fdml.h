@@ -97,9 +97,10 @@ namespace fdml {
                 (topRightRotation - bottomLeftRotation);
         }
 
-        FT volumeXY() {
+        FT volumeXYT() {
             return (topRightPosition.x() - bottomLeftPosition.x()) * 
-                (topRightPosition.y() - bottomLeftPosition.y());
+                (topRightPosition.y() - bottomLeftPosition.y()) * 
+                (topRightRotation - bottomLeftRotation);
         }
 
         inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {

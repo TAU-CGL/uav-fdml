@@ -51,8 +51,8 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
     fmt::print("numClusters: {}\n", results.numClusters / numexps);
     fmt::print("localizationVolume: {}\n", results.localizationVolume / numexps);
     fmt::print("localizationVolumePercentage: {}\n", results.localizationVolumePercentage / numexps);
-    fmt::print("localizationVolumeXY: {}\n", results.localizationVolumeXY / numexps);
-    fmt::print("localizationVolumePercentageXY: {}\n", results.localizationVolumePercentageXY / numexps);
+    fmt::print("localizationVolumeXYT: {}\n", results.localizationVolumeXYT / numexps);
+    fmt::print("localizationVolumePercentageXYT: {}\n", results.localizationVolumePercentageXYT / numexps);
 
 
 END_EXPERIMENT()

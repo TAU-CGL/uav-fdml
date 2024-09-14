@@ -70,6 +70,9 @@ if __name__ == "__main__":
         except subprocess.TimeoutExpired:
             print(f"Timeout for {args}")
             output = ""
+        except Exception as e:
+            print(f"Error for {args}: {str(e)}")
+            output = ""
         print(args)
         print(output)
 

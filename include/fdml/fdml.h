@@ -123,7 +123,7 @@ namespace fdml {
             std::vector<FT> thetas;
             thetas.push_back(blR);
             thetas.push_back(trR);
-            for (int k = -3; k <= 3; k++) {
+            for (int k = -4; k <= 4; k++) {
                 FT tmp = atan(gx / gy) + k * M_PI;
                 if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
             }

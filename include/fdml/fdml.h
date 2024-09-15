@@ -204,6 +204,17 @@ namespace fdml {
                 q.orientation >= bottomLeftRotation && q.orientation <= topRightRotation;
         }
 
+        void expand(int times) {
+            FT dx = times * (topRightPosition.x() - bottomLeftPosition.x());
+            FT dy = times * (topRightPosition.y() - bottomLeftPosition.y());
+            FT dz = times * (topRightPosition.z() - bottomLeftPosition.z());
+            FT dr = times * (topRightRotation - bottomLeftRotation);
+            bottomLeftPosition = Point(bottomLeftPosition.x() - dx, bottomLeftPosition.y() - dy, bottomLeftPosition.z() - dz);
+            topRightPosition = Point(topRightPosition.x() + dx, topRightPosition.y() + dy, topRightPosition.z() + dz);
+            bottomLeftRotation -= dr;
+            topRightRotation += dr;
+        }
+
         bool areNeighbors(R3xS1_Voxel& other) {
             return (topRightPosition.x() == other.bottomLeftPosition.x() || bottomLeftPosition.x() == other.topRightPosition.x()) &&
                 (topRightPosition.y() == other.bottomLeftPosition.y() || bottomLeftPosition.y() == other.topRightPosition.y()) &&

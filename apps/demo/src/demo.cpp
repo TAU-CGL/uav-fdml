@@ -98,12 +98,20 @@ void DemoGUI::update(float deltaTime) {
             ImGui::Text("Error XYZ: %.2f", env.metrics.errorXYZ);
             ImGui::Text("Error Theta: %.2f", env.metrics.errorTheta);
             ImGui::Text("Is Conservative? [%s]", env.metrics.conservativeSuccess ? "Yes" : "No");
+
+            ImGui::SeparatorText("Cleaning");
+            ImGui::InputInt("Expansions", &numExpansions);
+            if (ImGui::Button("Filter Voxels")) {
+                filterVoxelsNearBoundary();
+            }
         }
 
         ImGui::SeparatorText("Visualization");
         static bool shouldCull = false;
         if (ImGui::Checkbox("Face Culling", &shouldCull))
             LE3GetActiveScene()->setCulling(shouldCull);
+
+        
 
 
     ImGui::End();
@@ -144,6 +152,16 @@ std::string DemoGUI::envDisplayName(std::string path) {
 }
 std::string DemoGUI::envMeshName(std::string path) {
     return "SM_FDML_" + envDisplayName(path);
+}
+
+void DemoGUI::filterVoxelsNearBoundary() {
+    fdml::VoxelCloud copy = env.localization, tmp;
+    fmt::print("Expanding {} times\n", numExpansions);
+    for (auto& v : copy) v.expand(numExpansions);
+    for (int i = 0; i < env.localization.size(); i++)
+        if (!env.getTree().do_intersect(Box(copy[i].bottomLeftPosition, copy[i].topRightPosition)))
+            tmp.push_back(env.localization[i]);
+    env.localization = tmp;
 }
 
 

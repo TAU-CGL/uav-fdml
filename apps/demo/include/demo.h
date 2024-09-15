@@ -29,7 +29,8 @@ protected:
     std::vector<char> availableEnvsStr;
     std::string selectedEnv = "";
     std::string predeterminedPath = "";
-    
+    int numExpansions = 1;
+
     std::vector<fdml::R3xS1> configurations;
     int configurationsHead = 0;
     
@@ -44,4 +45,5 @@ protected:
     void initAvailableEnvs();
     std::string envDisplayName(std::string path);
     std::string envMeshName(std::string path);
+    void filterVoxelsNearBoundary(); // We can assume that the UAV has a reasonable clearance from boundary of the environment
 };

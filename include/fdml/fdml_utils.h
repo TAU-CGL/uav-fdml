@@ -280,9 +280,10 @@ namespace fdml {
                 FT x, y, z, theta;
                 q0ss >> x >> y >> z >> theta;
                 q0 = R3xS1(Point(x, y, z), theta);
-                for (int i = 0; i < groundTruths.size(); i++) {
-                    groundTruths[i] = groundTruths[i] * q0;
+                for (int i = 1; i < groundTruths.size(); i++) {
+                    groundTruths[i] = (groundTruths[0] / groundTruths[i]) * q0;
                 }
+                groundTruths[0] = q0; 
             } else q0 = groundTruths[0];
         }
 

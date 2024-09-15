@@ -7,3 +7,6 @@ raw/
 .DS_Store
 
 __pycache__/
+
+*.csv
+*.db

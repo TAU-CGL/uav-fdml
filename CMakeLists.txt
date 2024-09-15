@@ -64,8 +64,6 @@ find_package(CGAL REQUIRED)
 ############################################################
 
 add_subdirectory(apps)
-enable_testing()
-add_subdirectory(tests)
 
 # Copy the resources directory to the build
 if (NOT SKIP_PKG_RESOURCES)

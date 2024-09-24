@@ -101,14 +101,14 @@ Scene.Objects = {
     --     MeshName = "SM_room",
     --     MaterialName = "M_room",
     -- },
-    {
-        Type = "StaticModel",
-        Name = "demoDrone",
-        MeshName = "SM_drone",
-        MaterialName = "M_drone",
-        Position = {0, -5, 0},
-        Scale = {0.5, 0.5, 0.5},
-    },
+    -- {
+    --     Type = "StaticModel",
+    --     Name = "demoDrone",
+    --     MeshName = "SM_drone",
+    --     MaterialName = "M_drone",
+    --     Position = {0, -5, 0},
+    --     Scale = {0.5, 0.5, 0.5},
+    -- },
 }
 
 Scene.ObjectRelations = {

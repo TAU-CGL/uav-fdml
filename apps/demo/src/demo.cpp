@@ -7,13 +7,15 @@ void DemoGUI::init() {
     LE3GetSceneManager().getActiveScene()->load("/fdml/demo_scene.lua");
     LE3GetSceneManager().getActiveScene()->getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
     LE3GetSceneManager().getActiveScene()->getMainCamera()->setPitchYaw(0.f, -1.57f);
-    LE3GetActiveScene()->setCulling(false);
+    LE3GetActiveScene()->setCulling(true);
     initGizmo();
 
     /// -------------------------------
 
+    initDrone();
     initAvailableEnvs();
     loadEnvironment("/fdml/scans/labs/lab446.obj");
+
 
     fflush(stdout);
 }
@@ -32,6 +34,7 @@ void DemoGUI::update(float deltaTime) {
     
     LE3SimpleDemo::update(deltaTime);
     updateGizmo();
+    updateDrone();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(300, LE3GetActiveScene()->getHeight()));
@@ -43,6 +46,16 @@ void DemoGUI::update(float deltaTime) {
         if (ImGui::Button("Load")) {
             loadEnvironment(availableEnvs[comboCurr]);
         }
+
+        ImGui::SeparatorText("Drone");
+        static float droneX, droneY, droneZ, droneR;
+        ImGui::SliderFloat("X", &droneX, -10.f, 10.f);
+        ImGui::SliderFloat("Y", &droneY, -10.f, 10.f);
+        ImGui::SliderFloat("Z", &droneZ, -10.f, 10.f);
+        ImGui::SliderFloat("R", &droneR, -10.f, 10.f);
+        if (ImGui::Button("Random")) {
+        }
+        env.setActualDroneLocation(fdml::R3xS1(Point(droneX, droneY, droneZ), droneR));
 
         if (selectedEnv != "") {
             ImGui::SeparatorText("Experiment");
@@ -58,7 +71,7 @@ void DemoGUI::update(float deltaTime) {
         }
 
         ImGui::SeparatorText("Visualization");
-        static bool shouldCull = false;
+        static bool shouldCull = true;
         if (ImGui::Checkbox("Face Culling", &shouldCull))
             LE3GetActiveScene()->setCulling(shouldCull);
 
@@ -122,25 +135,53 @@ void DemoGUI::renderDebug() {
     //         glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(1.f, 0.f, 1.f));
     // }
 
+    debugDrawToFCrown();
+
     // Draw bounding box
     debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
 }
 
-void DemoGUI::addConfigurationMarker(fdml::R3xS1 q) {
-    // configurations.push_back(q);
-    // std::string markerName = format("__marker_{}", configurations.size());
-    // std::string droneMarkerName = format("__drone_{}", configurations.size());
+void DemoGUI::debugDrawToFCrown() {
+    fdml::OdometrySequence tofCrown = env.getToFCrown();
+    for (fdml::R3xS2 g : tofCrown) {
+        fdml::R3xS2 g_ = env.getActualDroneLocation() * g;
+        fdml::R3xS1_Voxel v;
+        FT size = 0.01;
+        v.bottomLeftPosition = Point(g_.position.x() - size, g_.position.y() - size, g_.position.z() - size);
+        v.topRightPosition = Point(g_.position.x() + size, g_.position.y() + size, g_.position.z() + size);
+        debugDrawVoxel(v, glm::vec3(1.f, 0.f, 1.f));
 
-    // LE3GetSceneManager().getActiveScene()->addStaticModel(markerName, "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
-    // LE3GetSceneManager().getActiveScene()->addStaticModel(droneMarkerName, "SM_drone", "M_drone");
-    // // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
-    // LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setScale(1.75f);
-    // LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
-    // LE3GetSceneManager().getActiveScene()->getObject(markerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
+        FT dist = g_.measureDistance(env.getTree());
+        if (dist < 0) continue;
+        glm::vec3 pos(g_.position.x(), g_.position.z(), g_.position.y()); // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
+        glm::vec3 color(1.f, 0.f, 1.f); if (dist > 2.0) color = glm::vec3(1.f, 0.f, 0.f);
+        LE3GetVisualDebug().drawDebugLine(
+            pos, pos + ((float)dist) * glm::vec3(g_.direction.x(), g_.direction.z(), g_.direction.y()),
+            color
+        );
+        LE3GetVisualDebug().drawDebugBox(
+            pos + ((float)dist) * glm::vec3(g_.direction.x(), g_.direction.z(), g_.direction.y()),
+            glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), color);
+    }
+}
 
-    // LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setScale(0.05f);
-    // LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setRotationRPY(0.f, 0.f, q.orientation);
-    // LE3GetSceneManager().getActiveScene()->getObject(droneMarkerName)->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
+void DemoGUI::initDrone() {
+    LE3GetSceneManager().getActiveScene()->addStaticModel("__marker", "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
+    LE3GetSceneManager().getActiveScene()->addStaticModel("__drone", "SM_drone", "M_drone");
+
+    LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
+    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
+
+    env.createToFCrown(8, -0.03, 0.1, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
+}
+void DemoGUI::updateDrone() {
+    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
+    fdml::R3xS1 q = env.getActualDroneLocation();
+    LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
+    LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
+
+    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
+    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 }
 
 void DemoGUI::debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color) {

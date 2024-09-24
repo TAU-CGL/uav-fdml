@@ -80,12 +80,36 @@ namespace fdml {
             return m_tree;
         }
 
+        R3xS1 getActualDroneLocation() { // Usually using this is cheating
+            return m_droneLocation;
+        }
+        void setActualDroneLocation(R3xS1 location) {
+            m_droneLocation = location;
+        }
+
+        void createToFCrown(int k, FT zOffset, FT radius, Point direction) {
+            m_tofCrown.clear();
+            for (int i = 0; i < k; i++) {
+                FT angle = 2.0 * M_PI * (FT)i / (FT)k;
+                FT x = radius * cos(angle);
+                FT y = radius * sin(angle);
+                FT dx = cos(angle) * direction.x() - sin(angle) * direction.y();
+                FT dy = sin(angle) * direction.x() + cos(angle) * direction.y();
+                m_tofCrown.push_back(R3xS2(Point(x, y, zOffset), Point(dx, dy, direction.z())));
+            }
+        }
+        OdometrySequence getToFCrown() {
+            return m_tofCrown;
+        }
+
     public:
 
     private:
         std::list<Triangle> m_triangles;
         AABBTree m_tree;
         R3xS1_Voxel m_boundingBox;
+        R3xS1 m_droneLocation;
+        OdometrySequence m_tofCrown;
 
         Point samplePointInBB() {
             FT x = Random::randomDouble() * (m_boundingBox.topRightPosition.x() - m_boundingBox.bottomLeftPosition.x()) + m_boundingBox.bottomLeftPosition.x();

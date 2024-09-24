@@ -36,8 +36,8 @@ namespace fdml {
         R3xS2(Point position, Point direction) : position(position), direction(direction) {}
         
         double measureDistance(AABBTree& room) {
-            Point down(this->position.x(), this->position.y(), this->position.z() - 1.0);
-            Ray ray(this->position, down);
+            Point target(position.x() + direction.x(), position.y() + direction.y(), position.z() + direction.z()); 
+            Ray ray(this->position, target);
             auto result = room.first_intersection(ray);
             if (!result.has_value()) { return -1; }
             const Point* p = boost::get<Point>(&(result->first));

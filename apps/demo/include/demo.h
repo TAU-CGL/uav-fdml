@@ -19,9 +19,7 @@ public:
     void init();
     void renderDebug();
     void update(float deltaTime);
-
-    void addConfigurationMarker(fdml::R3xS1 q);
-
+    
 protected:
     std::vector<std::string> availableEnvs;
     std::vector<char> availableEnvsStr;
@@ -32,9 +30,13 @@ protected:
     void loadEnvironment(std::string path);
     void runRandomExperiment();
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
+    void debugDrawToFCrown();
 
     void initGizmo();
     void updateGizmo();
+
+    void initDrone();
+    void updateDrone();
 
     void initAvailableEnvs();
     std::string envDisplayName(std::string path);

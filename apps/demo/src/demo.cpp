@@ -172,7 +172,7 @@ void DemoGUI::initDrone() {
     LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
 
-    env.createToFCrown(8, -0.03, 0.1, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
+    env.createToFCrown(8, -0.03, 0.15, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
 }
 void DemoGUI::updateDrone() {
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates

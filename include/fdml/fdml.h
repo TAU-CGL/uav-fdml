@@ -102,37 +102,37 @@ namespace fdml {
                 (topRightRotation - bottomLeftRotation);
         }
 
-        // inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {
-        //     std::vector<FT> thetas;
-        //     thetas.push_back(blR);
-        //     thetas.push_back(trR);
-        //     for (int k = -3; k <= 3; k++) {
-        //         FT tmp = atan(-gy / gx) + k * M_PI;
-        //         if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
-        //     }
-        //     minX = INFTY, maxX = -INFTY;
-        //     for (auto& theta : thetas) {
-        //         FT x = gx * cos(theta) - gy * sin(theta);
-        //         minX = MIN(minX, x);
-        //         maxX = MAX(maxX, x);
-        //     }
-        // }
+        inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {
+            std::vector<FT> thetas;
+            thetas.push_back(blR);
+            thetas.push_back(trR);
+            for (int k = -3; k <= 3; k++) {
+                FT tmp = atan(-gy / gx) + k * M_PI;
+                if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
+            }
+            minX = INFTY, maxX = -INFTY;
+            for (auto& theta : thetas) {
+                FT x = gx * cos(theta) - gy * sin(theta);
+                minX = MIN(minX, x);
+                maxX = MAX(maxX, x);
+            }
+        }
 
-        // inline void _calcBoundY(FT blR, FT trR, FT gx, FT gy, FT& minY, FT& maxY) {
-        //     std::vector<FT> thetas;
-        //     thetas.push_back(blR);
-        //     thetas.push_back(trR);
-        //     for (int k = -4; k <= 4; k++) {
-        //         FT tmp = atan(gx / gy) + k * M_PI;
-        //         if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
-        //     }
-        //     minY = INFTY, maxY = -INFTY;
-        //     for (auto& theta : thetas) {
-        //         FT y = gx * sin(theta) + gy * cos(theta);
-        //         minY = MIN(minY, y);
-        //         maxY = MAX(maxY, y);
-        //     }
-        // }
+        inline void _calcBoundY(FT blR, FT trR, FT gx, FT gy, FT& minY, FT& maxY) {
+            std::vector<FT> thetas;
+            thetas.push_back(blR);
+            thetas.push_back(trR);
+            for (int k = -4; k <= 4; k++) {
+                FT tmp = atan(gx / gy) + k * M_PI;
+                if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
+            }
+            minY = INFTY, maxY = -INFTY;
+            for (auto& theta : thetas) {
+                FT y = gx * sin(theta) + gy * cos(theta);
+                minY = MIN(minY, y);
+                maxY = MAX(maxY, y);
+            }
+        }
 
         // // Apply the g_tilde offset to the voxel as described in the paper
         // R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds, int iteration) {

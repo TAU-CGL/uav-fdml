@@ -26,6 +26,7 @@ protected:
     std::string selectedEnv = "";
 
     fdml::ExperimentEnv env;
+    fdml::VoxelCloud localization;
     
     void loadEnvironment(std::string path);
     void runRandomExperiment();

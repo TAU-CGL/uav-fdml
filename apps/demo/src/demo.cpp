@@ -25,9 +25,28 @@ void DemoGUI::runRandomExperiment() {
     std::chrono::duration<double, std::milli> __duration;
     begin = std::chrono::steady_clock::now();
 
+    fdml::OdometrySequence odometrySequence = env.getToFCrown();
+    fdml::MeasurementSequence measurementSequence;
+    fdml::R3xS1 actualQ = env.getActualDroneLocation();
+    for (fdml::R3xS2 g : odometrySequence) {
+        fdml::R3xS2 g_ = actualQ * g;
+        measurementSequence.push_back(g_.measureDistance(env.getTree()));
+    }
+    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 9);
+
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
     print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
+
+    for (fdml::R3xS1_Voxel v : localization) {
+        if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
+        fmt::print("{} {} {} {} | GT {} {} {} {} | Contains: {}\n", 
+            v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation,
+            actualQ.position.x(), actualQ.position.y(), actualQ.position.z(), actualQ.orientation, 
+            v.contains(actualQ)
+        );
+        if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
+    }
 }
 
 void DemoGUI::update(float deltaTime) {
@@ -136,6 +155,10 @@ void DemoGUI::renderDebug() {
     // }
 
     debugDrawToFCrown();
+
+    for (fdml::R3xS1_Voxel v : localization) {
+        debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
+    }
 
     // Draw bounding box
     debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));

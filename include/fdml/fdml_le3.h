@@ -14,8 +14,8 @@
 // We assume that the environment is a static mesh loaded in the asset manager
 static void FDML_LE3_LoadEnvironment(le3::LE3AssetManager& assets, std::string envName, fdml::ExperimentEnv& env) {
     auto mesh = assets.getStaticMesh(envName);
-    auto vertices = mesh->getKeptData();
-    auto indices = mesh->getKeptIndices();
+    auto vertices = mesh.lock()->getKeptData();
+    auto indices = mesh.lock()->getKeptIndices();
 
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     std::list<Triangle> triangles;

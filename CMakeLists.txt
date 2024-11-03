@@ -31,6 +31,7 @@ include_directories("include")
 
 if (WITH_VISUALIZATION)
     set(LE3_WITH_DEMOS false)
+    set(LE3_WITH_EDITOR false)
     add_subdirectory(third-party/LightEngine3)
 endif()
 

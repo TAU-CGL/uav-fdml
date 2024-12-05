@@ -32,7 +32,7 @@ void DemoGUI::runRandomExperiment() {
         fdml::R3xS2 g_ = actualQ * g;
         measurementSequence.push_back(g_.measureDistance(env.getTree()));
     }
-    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 9);
+    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 15);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
@@ -45,7 +45,7 @@ void DemoGUI::runRandomExperiment() {
             actualQ.position.x(), actualQ.position.y(), actualQ.position.z(), actualQ.orientation, 
             v.contains(actualQ)
         );
-        if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
+        // if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
     }
 }
 
@@ -71,7 +71,7 @@ void DemoGUI::update(float deltaTime) {
         ImGui::SliderFloat("X", &droneX, -10.f, 10.f);
         ImGui::SliderFloat("Y", &droneY, -10.f, 10.f);
         ImGui::SliderFloat("Z", &droneZ, -10.f, 10.f);
-        ImGui::SliderFloat("R", &droneR, -10.f, 10.f);
+        ImGui::SliderFloat("R", &droneR, 0.f, 2.f * M_PI);
         if (ImGui::Button("Random")) {
         }
         env.setActualDroneLocation(fdml::R3xS1(Point(droneX, droneY, droneZ), droneR));
@@ -177,7 +177,7 @@ void DemoGUI::debugDrawToFCrown() {
         FT dist = g_.measureDistance(env.getTree());
         if (dist < 0) continue;
         glm::vec3 pos(g_.position.x(), g_.position.z(), g_.position.y()); // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
-        glm::vec3 color(1.f, 0.f, 1.f); if (dist > 2.0) color = glm::vec3(1.f, 0.f, 0.f);
+        glm::vec3 color(1.f, 0.f, 1.f); if (dist > 4.0) color = glm::vec3(1.f, 0.f, 0.f);
         LE3GetVisualDebug().drawDebugLine(
             pos, pos + ((float)dist) * glm::vec3(g_.direction.x(), g_.direction.z(), g_.direction.y()),
             color
@@ -195,7 +195,7 @@ void DemoGUI::initDrone() {
     LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
 
-    env.createToFCrown(8, -0.03, 0.15, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
+    env.createToFCrown(16, 0, 0.07687 + 0.01017, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
 }
 void DemoGUI::updateDrone() {
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates

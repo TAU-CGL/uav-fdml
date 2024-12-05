@@ -32,7 +32,7 @@ void DemoGUI::runRandomExperiment() {
         fdml::R3xS2 g_ = actualQ * g;
         measurementSequence.push_back(g_.measureDistance(env.getTree()));
     }
-    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 15);
+    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 12, errorBound);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
@@ -82,7 +82,7 @@ void DemoGUI::update(float deltaTime) {
             static float delta, epsilon;
             // ImGui::SliderInt("k", &params.k, 4, 50);
             // ImGui::InputDouble("delta", &params.delta);
-            // ImGui::InputDouble("epsilon", &params.epsilon);
+            ImGui::InputDouble("epsilon", &errorBound);
 
             if (ImGui::Button("Run")) {
                 runRandomExperiment();
@@ -189,10 +189,10 @@ void DemoGUI::debugDrawToFCrown() {
 }
 
 void DemoGUI::initDrone() {
-    LE3GetSceneManager().getActiveScene()->addStaticModel("__marker", "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
+    // LE3GetSceneManager().getActiveScene()->addStaticModel("__marker", "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
     LE3GetSceneManager().getActiveScene()->addStaticModel("__drone", "SM_drone", "M_drone");
 
-    LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
+    // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
 
     env.createToFCrown(16, 0, 0.07687 + 0.01017, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
@@ -200,8 +200,8 @@ void DemoGUI::initDrone() {
 void DemoGUI::updateDrone() {
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     fdml::R3xS1 q = env.getActualDroneLocation();
-    LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
-    LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
+    // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
+    // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));

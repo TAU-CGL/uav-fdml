@@ -112,7 +112,7 @@ namespace fdml {
             return Point(x, y, z);
         }
 
-        R3xS1_Voxel forwardOdometry(R3xS2 g, FT d, ErrorBounds errorBounds) {
+        R3xS1_Voxel forwardOdometry(R3xS2 g, FT d, FT errorBound) {
             FT alpha1 = g.position.x() + d * g.direction.x();
             FT alpha2 = g.position.y() + d * g.direction.y();
             FT alpha3 = g.position.z() + d * g.direction.z();
@@ -141,14 +141,14 @@ namespace fdml {
             FT maxZ = topRightPosition.z() + alpha3;
 
             R3xS1_Voxel v;
-            v.bottomLeftPosition = Point(minX, minY, minZ);
-            v.topRightPosition = Point(maxX, maxY, maxZ);
+            v.bottomLeftPosition = Point(minX - errorBound, minY - errorBound, minZ - errorBound);
+            v.topRightPosition = Point(maxX + errorBound, maxY + errorBound, maxZ + errorBound);
             v.bottomLeftRotation = v.topRightRotation = 0;
             return v;
         }
 
-        bool predicate(R3xS2 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds, int iteration) {
-            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement, errorBounds);
+        bool predicate(R3xS2 g_tilde, FT measurement, AABBTree& env, FT errorBound, int iteration) {
+            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement, errorBound);
             Box query(v.bottomLeftPosition, v.topRightPosition);
             return env.do_intersect(query);
         }
@@ -207,7 +207,7 @@ namespace fdml {
     };
     using VoxelCloud = std::vector<R3xS1_Voxel>;
     
-    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, ErrorBounds errorBounds = ErrorBounds()) {
+    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, FT errorBound = 0) {
         omp_set_num_threads(omp_get_max_threads());
 
         // Get squence of aggregated odometries
@@ -237,7 +237,7 @@ namespace fdml {
                 bool flag = true;
                 for (int j = 0; j < odometrySequence.size(); j++) {
                     if (measurementSequence[j] < 0) continue;
-                    if (!v.predicate(odometrySequence[j], measurementSequence[j], env, errorBounds, j)) {
+                    if (!v.predicate(odometrySequence[j], measurementSequence[j], env, errorBound, j)) {
                         flag = false;
                         break;
                     }

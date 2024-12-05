@@ -27,6 +27,7 @@ protected:
 
     fdml::ExperimentEnv env;
     fdml::VoxelCloud localization;
+    FT errorBound = 0.005;
     
     void loadEnvironment(std::string path);
     void runRandomExperiment();

@@ -1,5 +1,11 @@
 #include "demo.h"
 
+#ifdef __linux__
+#include <GL/glew.h>
+#else
+#include <gl/glew.h>
+#endif
+
 void DemoGUI::init() {
     LE3SimpleDemo::init();
 
@@ -30,7 +36,9 @@ void DemoGUI::runRandomExperiment() {
     fdml::R3xS1 actualQ = env.getActualDroneLocation();
     for (fdml::R3xS2 g : odometrySequence) {
         fdml::R3xS2 g_ = actualQ * g;
-        measurementSequence.push_back(g_.measureDistance(env.getTree()));
+        FT dist = g_.measureDistance(env.getTree());
+        dist += fdml::Random::randomGaussian(errorBound);
+        measurementSequence.push_back(dist);
     }
     localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 12, errorBound);
 
@@ -153,6 +161,8 @@ void DemoGUI::renderDebug() {
     //         pos - glm::vec3(0.f, distance, 0.f),
     //         glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(1.f, 0.f, 1.f));
     // }
+
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     debugDrawToFCrown();
 

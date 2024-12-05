@@ -44,6 +44,6 @@ if (WITH_VISUALIZATION)
         src/main.cpp
         src/demo.cpp
     )
-    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} glm::glm assimp::assimp ${LUA_LIBRARIES} CGAL::CGAL OpenMP::OpenMP_CXX)
+    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} GLEW::GLEW glm::glm assimp::assimp ${LUA_LIBRARIES} CGAL::CGAL OpenMP::OpenMP_CXX)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 endif()

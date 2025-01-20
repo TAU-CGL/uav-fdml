@@ -315,7 +315,7 @@ void DemoGUI::initDrone() {
     LE3GetSceneManager().getActiveScene()->addStaticModel("__drone", "SM_drone", "M_drone");
 
     // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
-    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
+    // LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
 
     env.createToFCrown(16, 0, 0.07687 + 0.01017, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
 }

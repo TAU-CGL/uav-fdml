@@ -14,11 +14,13 @@ Scene.Textures = {
     },
     {
         Name = "T_DIF_drone",
-        Path = "/fdml/drone/T_DIF_drone.png"
+        -- Path = "/fdml/drone/T_DIF_drone.png"
+        Path = "/fdml/drone/T_DIF_crazyflie.png"
     },
     {
         Name = "T_SPEC_drone",
-        Path = "/fdml/drone/T_MTL_drone.png"
+        -- Path = "/fdml/drone/T_MTL_drone.png"
+        Path = "/fdml/drone/T_SPEC_crazyflie.png"
     },
     {
         Name = "T_basilica",
@@ -83,7 +85,7 @@ Scene.StaticMeshes = {
     },
     {
         Name = "SM_drone",
-        Path = "/fdml/drone/SM_drone.fbx",
+        Path = "/fdml/drone/SM_crazyflie.obj",
     },
 }
 Scene.SkeletalMeshes = {

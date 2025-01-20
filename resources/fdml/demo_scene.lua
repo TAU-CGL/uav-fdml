@@ -9,7 +9,8 @@ Scene.Shaders = {
 Scene.Textures = {
     {
         Name = "T_room",
-        Path = "/fdml/old/240521-141038/240521-141038.jpg"
+        -- Path = "/fdml/old/240521-141038/240521-141038.jpg"
+        Path = "/fdml/scans/labs/lab363_v3.jpg"
     },
     {
         Name = "T_DIF_drone",
@@ -28,7 +29,7 @@ Scene.Materials = {
     {
         Name = "M_room",
         ShaderName = "S_default",
-        -- DiffuseTexture = "T_room",
+        DiffuseTexture = "T_room",
         Shininess = 1024
     },
     {

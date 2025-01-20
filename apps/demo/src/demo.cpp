@@ -6,6 +6,11 @@
 #include <gl/glew.h>
 #endif
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+#include "misc/cpp/imgui_stdlib.h"
+
 void DemoGUI::init() {
     LE3SimpleDemo::init();
 
@@ -20,7 +25,20 @@ void DemoGUI::init() {
 
     initDrone();
     initAvailableEnvs();
-    loadEnvironment("/fdml/scans/labs/lab446.obj");
+    loadEnvironment("/fdml/scans/labs/lab363_v3.obj");
+
+    // Load json measurements
+    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/measurements.json");
+    json j = json::parse(buffer.toString());
+    for (auto m : j) {
+        double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
+        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = m["yaw"];
+
+        manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
+        groundTruthLocations.push_back(fdml::R3xS1(Point(y, x, z), yaw));
+    }
+
+    env.setActualDroneLocation(groundTruthLocations[currExpIdx]);
 
 
     fflush(stdout);
@@ -37,8 +55,9 @@ void DemoGUI::runRandomExperiment() {
     for (fdml::R3xS2 g : odometrySequence) {
         fdml::R3xS2 g_ = actualQ * g;
         FT dist = g_.measureDistance(env.getTree());
-        dist += fdml::Random::randomGaussian(errorBound);
+        dist += (fdml::Random::randomDouble() * 2.0 - 1.0) * errorBound;
         measurementSequence.push_back(dist);
+        fmt::print("{},", dist);
     }
     localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 12, errorBound);
 
@@ -47,11 +66,51 @@ void DemoGUI::runRandomExperiment() {
     print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
 
     for (fdml::R3xS1_Voxel v : localization) {
-        if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
+        if (v.contains(actualQ)) {fmt::print("!!!!!!!!!!!\n");
         fmt::print("{} {} {} {} | GT {} {} {} {} | Contains: {}\n", 
             v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation,
             actualQ.position.x(), actualQ.position.y(), actualQ.position.z(), actualQ.orientation, 
             v.contains(actualQ)
+        );}
+        // if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
+    }
+}
+
+void DemoGUI::runManualExperiment() {
+    std::chrono::steady_clock::time_point begin, end;    
+    std::chrono::duration<double, std::milli> __duration;
+    begin = std::chrono::steady_clock::now();
+
+    fdml::OdometrySequence odometrySequence = env.getToFCrown();
+    fdml::MeasurementSequence measurementSequence;
+
+    env.setActualDroneLocation(groundTruthLocations[currExpIdx]);
+    
+    // Split manualDistance by ',' and cast to double
+    std::string delimiter = ",";
+    size_t pos = 0;
+    std::string token;
+    std::string manualDistance = manualDistances[currExpIdx];
+    while ((pos = manualDistance.find(delimiter)) != std::string::npos) {
+        token = manualDistance.substr(0, pos);
+        measurementSequence.push_back(std::stod(token));
+        manualDistance.erase(0, pos + delimiter.length());
+    }
+    measurementSequence.push_back(std::stod(manualDistance));
+
+    for (double d : measurementSequence) {
+        fmt::print("{},", d);
+    }
+
+    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 10, errorBound);
+
+    end = std::chrono::steady_clock::now();
+    __duration = end - begin;
+    print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
+
+    for (fdml::R3xS1_Voxel v : localization) {
+        fmt::print("{} {} {} {}\n", 
+            v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation
         );
         // if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
     }
@@ -62,6 +121,19 @@ void DemoGUI::update(float deltaTime) {
     LE3SimpleDemo::update(deltaTime);
     updateGizmo();
     updateDrone();
+
+
+    if (shouldPlay) {
+        expIdxFraction += deltaTime * speed;
+        if (expIdxFraction >= manualDistances.size()) {
+            expIdxFraction = 0.f;
+        }
+        if ((int)expIdxFraction > currExpIdx) {
+            currExpIdx = (int)expIdxFraction;
+            runManualExperiment();
+        }
+    }
+
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(300, LE3GetActiveScene()->getHeight()));
@@ -74,15 +146,15 @@ void DemoGUI::update(float deltaTime) {
             loadEnvironment(availableEnvs[comboCurr]);
         }
 
-        ImGui::SeparatorText("Drone");
-        static float droneX, droneY, droneZ, droneR;
-        ImGui::SliderFloat("X", &droneX, -10.f, 10.f);
-        ImGui::SliderFloat("Y", &droneY, -10.f, 10.f);
-        ImGui::SliderFloat("Z", &droneZ, -10.f, 10.f);
-        ImGui::SliderFloat("R", &droneR, 0.f, 2.f * M_PI);
-        if (ImGui::Button("Random")) {
-        }
-        env.setActualDroneLocation(fdml::R3xS1(Point(droneX, droneY, droneZ), droneR));
+        // ImGui::SeparatorText("Drone");
+        // static float droneX, droneY, droneZ, droneR;
+        // ImGui::SliderFloat("X", &droneX, -10.f, 10.f);
+        // ImGui::SliderFloat("Y", &droneY, -10.f, 10.f);
+        // ImGui::SliderFloat("Z", &droneZ, -10.f, 10.f);
+        // ImGui::SliderFloat("R", &droneR, 0.f, 2.f * M_PI);
+        // if (ImGui::Button("Random")) {
+        // }
+        // env.setActualDroneLocation(fdml::R3xS1(Point(droneX, droneY, droneZ), droneR));
 
         if (selectedEnv != "") {
             ImGui::SeparatorText("Experiment");
@@ -95,6 +167,46 @@ void DemoGUI::update(float deltaTime) {
             if (ImGui::Button("Run")) {
                 runRandomExperiment();
             }
+
+            ImGui::SeparatorText("Manual Experiments");
+            if (ImGui::Button("<<") && !shouldPlay) {
+                currExpIdx = (currExpIdx - 10 + manualDistances.size()) % manualDistances.size();
+                runManualExperiment();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("<") && !shouldPlay) {
+                currExpIdx = (currExpIdx - 1 + manualDistances.size()) % manualDistances.size();
+                runManualExperiment();
+            }
+            ImGui::SameLine();
+            ImGui::Text("%d", currExpIdx);
+            ImGui::SameLine();
+            if (ImGui::Button(">") && !shouldPlay) {
+                currExpIdx = (currExpIdx + 1) % manualDistances.size();
+                runManualExperiment();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(">>") && !shouldPlay) {
+                currExpIdx = (currExpIdx + 10) % manualDistances.size();
+                runManualExperiment();
+            }
+            
+            if (ImGui::Button("Play")) {
+                shouldPlay = true;
+                expIdxFraction = (float)currExpIdx;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Pause")) {
+                shouldPlay = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Reset")) {
+                currExpIdx = 0;
+                runManualExperiment();
+            }
+
+            ImGui::SliderFloat("Speed", &speed, 1.f, 25.f);
+        
         }
 
         ImGui::SeparatorText("Visualization");

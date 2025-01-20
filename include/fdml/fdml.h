@@ -6,8 +6,8 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/AABB_triangle_primitive.h>
+#include <CGAL/AABB_traits_3.h>
+#include <CGAL/AABB_triangle_primitive_3.h>
 
 using K = CGAL::Simple_cartesian<double>;
 using FT = K::FT;
@@ -17,7 +17,7 @@ using Point = K::Point_3;
 using Vector = K::Vector_3;
 using Box = K::Iso_cuboid_3;
 using Triangle = K::Triangle_3;
-using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primitive<K, std::list<Triangle>::iterator>>>;
+using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_3<K, CGAL::AABB_triangle_primitive_3<K, std::list<Triangle>::iterator>>>;
 
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
@@ -40,8 +40,9 @@ namespace fdml {
             Ray ray(this->position, target);
             auto result = room.first_intersection(ray);
             if (!result.has_value()) { return -1; }
-            const Point* p = boost::get<Point>(&(result->first));
-            return sqrt(CGAL::squared_distance(this->position, *p));
+            // const Point* p = boost::get<Point>(&(result->first));
+            auto taken = *std::move(result);
+            return sqrt(CGAL::squared_distance(this->position, std::get<Point>(taken.first)));
         }
     };
 
@@ -63,13 +64,6 @@ namespace fdml {
     };
     using OdometrySequence = std::vector<R3xS2>;
     using MeasurementSequence = std::vector<double>;
-
-    struct ErrorBounds {
-        FT errorOdometryX, errorOdometryY, errorOdometryZ, errorOdometryR;
-        FT errorDistance;
-
-        ErrorBounds() : errorOdometryX(0), errorOdometryY(0), errorOdometryZ(0), errorOdometryR(0), errorDistance(0) {}
-    };
 
     struct R3xS1_Voxel {
     public:

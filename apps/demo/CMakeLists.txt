@@ -26,6 +26,7 @@ if (WITH_VISUALIZATION)
     find_package(assimp REQUIRED)
     find_package(CGAL REQUIRED)
     find_package(OpenMP REQUIRED)
+    find_package(nlohmann_json REQUIRED)
     include_directories(${GLEW_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
 
     if(APPLE)
@@ -34,6 +35,7 @@ if (WITH_VISUALIZATION)
     endif()
 
     include_directories(${CMAKE_SOURCE_DIR}/third-party/LightEngine3/le3/include)
+    include_directories(${CMAKE_SOURCE_DIR}/third-party/LightEngine3/third-party/imgui)
     include_directories(${PROJECT_SOURCE_DIR}/include)
 
     if (NOT DEFINED LUA_LIBRARIES)
@@ -44,6 +46,6 @@ if (WITH_VISUALIZATION)
         src/main.cpp
         src/demo.cpp
     )
-    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} GLEW::GLEW glm::glm assimp::assimp ${LUA_LIBRARIES} CGAL::CGAL OpenMP::OpenMP_CXX)
+    target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} GLEW::GLEW glm::glm assimp::assimp ${LUA_LIBRARIES} CGAL::CGAL OpenMP::OpenMP_CXX nlohmann_json::nlohmann_json)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 endif()

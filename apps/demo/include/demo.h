@@ -27,7 +27,7 @@ protected:
 
     fdml::ExperimentEnv env;
     fdml::VoxelCloud localization;
-    FT errorBound = 0.005;
+    FT errorBound = 0.015;
 
     std::vector<std::string> manualDistances;
     std::vector<fdml::R3xS1> groundTruthLocations;

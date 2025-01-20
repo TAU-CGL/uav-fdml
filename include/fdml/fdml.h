@@ -185,7 +185,7 @@ namespace fdml {
             //     (topRightRotation == other.bottomLeftRotation || bottomLeftRotation == other.topRightRotation);
 
             // Voxels are neighbors if their centers are close enough (factor of the diameter)
-            constexpr FT factor = 5;
+            constexpr FT factor = 50;
             FT sqdist = CGAL::squared_distance(this->middle().position, other.middle().position);
             FT rotsqr = this->middle().orientation - other.middle().orientation; rotsqr *= rotsqr;
             sqdist = sqdist + rotsqr;
@@ -220,6 +220,15 @@ namespace fdml {
         
     };
     using VoxelCloud = std::vector<R3xS1_Voxel>;
+
+    static bool verifyLocation(R3xS1 q0, AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, FT errorBound = 0) {
+        for (int i = 0; i < odometrySequence.size(); i++) {
+            R3xS2 q = q0 * odometrySequence[i];
+            FT measurement = measurementSequence[i];
+            if (abs(measurement - measurementSequence[i]) > 3.0 * errorBound) return false;
+        }
+        return true;
+    }
     
     static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, FT errorBound = 0) {
         omp_set_num_threads(omp_get_max_threads());
@@ -295,19 +304,19 @@ namespace fdml {
                 p.orientation += v.middle().orientation;
             }
             p.position = Point(p.position.x() / cluster.size(), p.position.y() / cluster.size(), p.position.z() / cluster.size());
-            p.orientation /= cluster.size();\
+            p.orientation /= cluster.size();
+
+            if (!verifyLocation(p, env, odometrySequence, measurementSequence, errorBound)) {
+                continue;
+            }
 
             // TODO: TEMP code
-            FT dx = (cluster[0].topRightPosition.x() - cluster[0].bottomLeftPosition.x()) / 2;
-            FT dy = (cluster[0].topRightPosition.y() - cluster[0].bottomLeftPosition.y()) / 2;
-            FT dz = (cluster[0].topRightPosition.z() - cluster[0].bottomLeftPosition.z()) / 2;
-            FT dr = (cluster[0].topRightRotation - cluster[0].bottomLeftRotation) / 2;
-            FT factor = 5.0;
+            FT factor = 2.5;
             localization.push_back(R3xS1_Voxel{
-                Point(p.position.x() - dx * factor, p.position.y() - dy * factor, p.position.z() - dz * factor),
-                Point(p.position.x() + dx * factor, p.position.y() + dy * factor, p.position.z() + dz * factor),
-                p.orientation - dr,
-                p.orientation + dr
+                Point(p.position.x() - errorBound * factor, p.position.y() - errorBound * factor, p.position.z() - errorBound * factor),
+                Point(p.position.x() + errorBound * factor, p.position.y() + errorBound * factor, p.position.z() + errorBound * factor),
+                p.orientation,
+                p.orientation
             });
         }
 

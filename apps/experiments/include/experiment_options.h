@@ -18,7 +18,7 @@ namespace po = boost::program_options;
         std::chrono::duration<double, std::milli> __duration;\
         desc.add_options()\
             ("help", "produce help message")\
-            ("num_experiments", po::value<int>(&__num_experiments)->default_value(10), "number of experiments");
+            ("num_experiments", po::value<int>(&__num_experiments)->default_value(1), "number of experiments");
 
 #define END_EXPERIMENT() return 0; }
 

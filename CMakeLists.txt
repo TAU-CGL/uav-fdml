@@ -9,7 +9,7 @@ if (NOT DEFINED WITH_VISUALIZATION)
 endif()
 
 if (NOT DEFINED SKIP_PKG_RESOURCES)
-    set (SKIP_PKG_RESOURCES true)
+    set (SKIP_PKG_RESOURCES false)
 endif()
 
 ##########################

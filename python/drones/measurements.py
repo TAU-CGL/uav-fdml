@@ -11,7 +11,15 @@ from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.syncLogger import SyncLogger
 
-TRAJECTORY = [(0, -1), (1.6, -1), (1.73, -0.8), (0.13, -0.8), (0, -0.6), (1.75, -0.6), (1.78, -0.4), (0, -0.4), (0, -0.2), (1.75, -0.2), (1.61, 0), (-0.1, 0), (0, 0.2), (1.57, 0.2), (1.57, 0.4), (0.05, 0.4), (0, 0.6), (1.55, 0.6), (1.3, 0.8), (0, 0.8)]
+# Original Trajectory in Lab 363
+# TRAJECTORY = [(0, -1), (1.6, -1), (1.73, -0.8), (0.13, -0.8), (0, -0.6), (1.75, -0.6), (1.78, -0.4), (0, -0.4), (0, -0.2), (1.75, -0.2), (1.61, 0), (-0.1, 0), (0, 0.2), (1.57, 0.2), (1.57, 0.4), (0.05, 0.4), (0, 0.6), (1.55, 0.6), (1.3, 0.8), (0, 0.8)]
+# ZMIN = 0.65
+# ZMAX = 0.8
+
+# Trajectory in Lab 446 (21/01/2025)
+TRAJECTORY = [(0, 0), (-0.04, -0.22), (1.14, -0.28), (1.16, 0.58), (-0.75, 0.57), (-0.32, -0.05), (0, 0)]
+ZMIN = 1.25
+ZMAX = 1.35
 
 URI = 'radio://0/76/2M/E7E7E7E701'
 
@@ -51,7 +59,7 @@ def control(scf, lg):
     cf = scf.cf
     commander = cf.high_level_commander
 
-    height = random.uniform(0.65, 0.8)
+    height = random.uniform(ZMIN, ZMAX)
     commander.takeoff(height, 2.5)
     time.sleep(3)
 

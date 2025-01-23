@@ -16,7 +16,7 @@ const std::string envName = "environment";
 BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environment with random valid k")
     ADD_OPTION(int, depth, 10, "Subdivision search recursion depth");
     ADD_OPTION(double, epsilon, 0.015, "Distance measurement error bound");
-    ADD_OPTION(std::string, environment, "/fdml/scans/labs/lab363_v3.obj", "Path to OBJ file of the scene");
+    ADD_OPTION(std::string, environment, "/fdml/scans/labs/lab446a_v2.obj", "Path to OBJ file of the scene");
     ADD_OPTION(std::string, measurements, "/fdml/experiments/measurements.json", "Path to JSON file with measurements");
     PARSE_ARGS();
 
@@ -49,7 +49,7 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
         std::vector<double> ds;
         ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
         measurementSequences.push_back(ds);
-        groundTruthLocations.push_back(fdml::R3xS1(Point(y, x, z), yaw));
+        groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
     }
     
 

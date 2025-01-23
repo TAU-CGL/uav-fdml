@@ -10,7 +10,9 @@ from utils import *
 
 SKIP_EXISTING = True
 
-EPS_VALUES = (0.001, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03)
+# EPS_VALUES = (0.001, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03)
+# EPS_VALUES = (0.005, 0.015, 0.03, 0.05)
+EPS_VALUES = (0.005, 0.01, 0.015)
 EXPERIMENT_NAME = "experiment_accuracy"
 RESULTS_DIR = "results"
 DB_PATH = os.path.join(RESULTS_DIR, "results.db")

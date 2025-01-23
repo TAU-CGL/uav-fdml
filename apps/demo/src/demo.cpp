@@ -25,7 +25,7 @@ void DemoGUI::init() {
 
     initDrone();
     initAvailableEnvs();
-    loadEnvironment("/fdml/scans/labs/lab363_v3.obj");
+    loadEnvironment("/fdml/scans/labs/lab446a_v2.obj");
 
     // Load json measurements
     LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/measurements.json");
@@ -35,7 +35,7 @@ void DemoGUI::init() {
         double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = m["yaw"];
 
         manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
-        groundTruthLocations.push_back(fdml::R3xS1(Point(y, x, z), yaw));
+        groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
     }
 
     env.setActualDroneLocation(groundTruthLocations[currExpIdx]);

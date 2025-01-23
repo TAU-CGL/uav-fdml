@@ -25,7 +25,7 @@ void DemoGUI::init() {
 
     initDrone();
     initAvailableEnvs();
-    loadEnvironment("/fdml/scans/labs/lab446a_v2.obj");
+    loadEnvironment("/fdml/scans/labs/lab446a.ply");
 
     // Load json measurements
     LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/measurements.json");
@@ -224,17 +224,24 @@ void DemoGUI::loadEnvironment(std::string path) {
     std::string name = envMeshName(selectedEnv);
     if (auto obj = LE3GetActiveScene()->getObject<LE3DrawableObject>(name)) obj->setHidden(false);
     else {
-        LE3GetAssetManager().addStaticMesh(name, selectedEnv, true);
-        LE3GetActiveScene()->addStaticModel(name, name, "M_room");
+        if (path.ends_with(".obj")) {
+            LE3GetAssetManager().addStaticMesh(name, selectedEnv, true);
+            LE3GetActiveScene()->addStaticModel(name, name, "M_room");
+            FDML_LE3_LoadEnvironment(LE3GetAssetManager(), name, env);
+        }
+        else if (path.ends_with(".ply")) {
+            LE3GetActiveScene()->addPointCloud(name);
+            LE3GetActiveScene()->getObject<LE3PointCloud>(name)->fromFile(selectedEnv, true);
+            LE3GetActiveScene()->getObject<LE3PointCloud>(name)->create();
+        }
     }
 
-    FDML_LE3_LoadEnvironment(LE3GetAssetManager(), name, env);
 }
 
 void DemoGUI::initAvailableEnvs() {
     for (auto filename : LE3GetDatFileSystem().getFilesFromDir("/fdml/scans")) {
         // fmt::print("Trying: {}\n", filename);
-        if (filename.ends_with(".obj")) {
+        if (filename.ends_with(".ply")) {
             availableEnvs.push_back(filename);
             for (auto c : envDisplayName(filename))
                 availableEnvsStr.push_back(c);
@@ -243,11 +250,11 @@ void DemoGUI::initAvailableEnvs() {
     }
 }
 std::string DemoGUI::envDisplayName(std::string path) {
-    //Split by '/' and remove ".obj"
+    //Split by '/' and remove ".ply"
     std::string res;
     std::stringstream ss(path);
     while (std::getline(ss, res, '/'));
-    auto idx = res.find(".obj");
+    auto idx = res.find(".ply");
     return res.substr(0, idx);
 }
 std::string DemoGUI::envMeshName(std::string path) {

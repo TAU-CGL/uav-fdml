@@ -28,11 +28,11 @@ void DemoGUI::init() {
     loadEnvironment("/fdml/scans/labs/lab446a.ply");
 
     // Load json measurements
-    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/measurements.json");
+    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_446a.json");
     json j = json::parse(buffer.toString());
     for (auto m : j) {
         double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
-        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = -(double)m["yaw"] + M_PI;
+        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = 0;//-(double)m["yaw"] + M_PI;
 
         std::vector<double> ds;
         ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
@@ -79,12 +79,29 @@ void DemoGUI::runManualExperiment() {
     __duration = end - begin;
     print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
 
+
+    if (localization.size() == 0) {
+        fmt::print("No localization found\n");
+        return;
+    }
+
+    fdml::R3xS1 nearestLocation = localization[0].middle();
+    double bestDist = sqrt(CGAL::squared_distance(groundTruthLocations[currExpIdx].position, nearestLocation.position));
     for (fdml::R3xS1_Voxel v : localization) {
         fmt::print("{} {} {} {}\n", 
             v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation
         );
         // if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
+
+        double dist = sqrt(CGAL::squared_distance(groundTruthLocations[currExpIdx].position, v.middle().position));
+        if (dist < bestDist) {
+            bestDist = dist;
+            nearestLocation = v.middle();
+        }
     }
+
+    fdml::R3xS1 actualLocation(groundTruthLocations[currExpIdx].position, nearestLocation.orientation);
+    env.setActualDroneLocation(actualLocation);
 }
 
 void DemoGUI::update(float deltaTime) {
@@ -212,7 +229,7 @@ void DemoGUI::loadEnvironment(std::string path) {
             LE3GetActiveScene()->addPointCloud(name);
             LE3GetActiveScene()->getObject<LE3PointCloud>(name)->fromFile(selectedEnv, true);
             LE3GetActiveScene()->getObject<LE3PointCloud>(name)->create();
-            FDML_LE3_LoadEnvironmentPointCloud(LE3GetActiveScene()->getObject<LE3PointCloud>(name), env, 1.0f);
+            FDML_LE3_LoadEnvironmentPointCloud(LE3GetActiveScene()->getObject<LE3PointCloud>(name), env, 0.1f);
             pointCloud = LE3GetActiveScene()->getObject<LE3PointCloud>(name);
         }
     }

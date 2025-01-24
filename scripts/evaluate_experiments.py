@@ -13,6 +13,8 @@ SKIP_EXISTING = True
 # EPS_VALUES = (0.001, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03)
 # EPS_VALUES = (0.005, 0.015, 0.03, 0.05)
 EPS_VALUES = (0.005, 0.01, 0.015)
+ENVIRONMENT = "/fdml/scans/labs/lab446a.ply"
+MEASUREMENTS = "/fdml/experiments/exp_mr_lh_446a.json"
 EXPERIMENT_NAME = "experiment_accuracy"
 RESULTS_DIR = "results"
 DB_PATH = os.path.join(RESULTS_DIR, "results.db")
@@ -22,6 +24,8 @@ def run_experiment(epsilon):
     result = subprocess.run([
         get_executable_path(EXPERIMENT_NAME),
         "--epsilon", str(epsilon),
+        "--environment", ENVIRONMENT,
+        "--measurements", MEASUREMENTS
     ], cwd=get_bin_path(), capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr)

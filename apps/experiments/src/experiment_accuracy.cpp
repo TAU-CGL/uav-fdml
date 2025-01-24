@@ -15,9 +15,9 @@ const std::string envName = "environment";
 
 BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environment with random valid k")
     ADD_OPTION(int, depth, 10, "Subdivision search recursion depth");
-    ADD_OPTION(double, epsilon, 0.015, "Distance measurement error bound");
-    ADD_OPTION(std::string, environment, "/fdml/scans/labs/lab446a_v2.obj", "Path to OBJ file of the scene");
-    ADD_OPTION(std::string, measurements, "/fdml/experiments/measurements.json", "Path to JSON file with measurements");
+    ADD_OPTION(double, epsilon, 0.005, "Distance measurement error bound");
+    ADD_OPTION(std::string, environment, "/fdml/scans/labs/lab446a.ply", "Path to OBJ file of the scene");
+    ADD_OPTION(std::string, measurements, "/fdml/experiments/exp_mr_lh_446a.json", "Path to JSON file with measurements");
     PARSE_ARGS();
 
     le3::LE3AssetManager assets;
@@ -27,8 +27,15 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
     LE3Application app;
     app.init();
     le3::LE3GetDatFileSystem().addArchive("fdml", "fdml.dat");
-    assets.addStaticMesh(envName, environment, true);
-    FDML_LE3_LoadEnvironment(assets, envName, env);
+    if (environment.ends_with(".obj")) {
+        assets.addStaticMesh(envName, environment, true);
+        FDML_LE3_LoadEnvironment(assets, envName, env);
+    }
+    else if (environment.ends_with(".ply")) {
+        le3::LE3PointCloudPtr pc = std::make_shared<le3::LE3PointCloud>();
+        pc->fromFile(environment, true);
+        FDML_LE3_LoadEnvironmentPointCloud(pc, env, 0.1f);
+    }
 
     LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent(measurements);
     json j = json::parse(buffer.toString());

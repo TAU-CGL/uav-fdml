@@ -19,10 +19,18 @@ RESULTS_DIR = "results"
 ######################
 # EXP: MR + LH (446a)
 ######################
-ENVIRONMENT = "/fdml/scans/labs/lab446a.ply"
+# ENVIRONMENT = "/fdml/scans/labs/lab446a.ply"
+# EXPERIMENT_NAME = "experiment_accuracy"
+# MEASUREMENTS = "/fdml/experiments/exp_mr_lh_446a.json"
+# DB_PATH = os.path.join(RESULTS_DIR, "results_mr_lh_446a_m1.db")
+
+######################
+# EXP: MR + LH (363)
+######################
+ENVIRONMENT = "/fdml/scans/labs/lab363.ply"
 EXPERIMENT_NAME = "experiment_accuracy"
-MEASUREMENTS = "/fdml/experiments/exp_mr_lh_446a.json"
-DB_PATH = os.path.join(RESULTS_DIR, "results_mr_lh_446a_m1.db")
+MEASUREMENTS = "/fdml/experiments/exp_mr_lh_363.json"
+DB_PATH = os.path.join(RESULTS_DIR, "results_mr_lh_363_m1.db")
 
 
 def run_experiment(epsilon):

@@ -25,10 +25,12 @@ void DemoGUI::init() {
 
     initDrone();
     initAvailableEnvs();
-    loadEnvironment("/fdml/scans/labs/lab446a.ply");
+    // loadEnvironment("/fdml/scans/labs/lab446a.ply");
+    loadEnvironment("/fdml/scans/labs/lab363.ply");
 
     // Load json measurements
-    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_446a.json");
+    // LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_446a.json");
+    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_363.json");
     json j = json::parse(buffer.toString());
     for (auto m : j) {
         double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];

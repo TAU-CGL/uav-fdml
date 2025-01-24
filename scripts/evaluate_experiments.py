@@ -12,12 +12,17 @@ SKIP_EXISTING = True
 
 # EPS_VALUES = (0.001, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03)
 # EPS_VALUES = (0.005, 0.015, 0.03, 0.05)
-EPS_VALUES = (0.005, 0.01, 0.015)
-ENVIRONMENT = "/fdml/scans/labs/lab446a.ply"
-MEASUREMENTS = "/fdml/experiments/exp_mr_lh_446a.json"
-EXPERIMENT_NAME = "experiment_accuracy"
+# EPS_VALUES = (0.005, 0.01, 0.015)
+EPS_VALUES = (0.005, 0.01, 0.02, 0.03, 0.04, 0.05) # Values that appear in paper
 RESULTS_DIR = "results"
-DB_PATH = os.path.join(RESULTS_DIR, "results.db")
+
+######################
+# EXP: MR + LH (446a)
+######################
+ENVIRONMENT = "/fdml/scans/labs/lab446a.ply"
+EXPERIMENT_NAME = "experiment_accuracy"
+MEASUREMENTS = "/fdml/experiments/exp_mr_lh_446a.json"
+DB_PATH = os.path.join(RESULTS_DIR, "results_mr_lh_446a_m1.db")
 
 
 def run_experiment(epsilon):

@@ -23,12 +23,6 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
     le3::LE3AssetManager assets;
     fdml::ExperimentEnv env;
     env.createToFCrown(0, 0, 0, Point(0,0,0));
-    // fdml::ExperimentParams params;
-    // fdml::ExperimentMetrics results;
-    // params.k = k;
-    // params.delta = delta;
-    // params.epsilon = epsilon;
-    // params.enforceGoodTrajectory = egt;
     
     LE3Application app;
     app.init();
@@ -98,27 +92,5 @@ BEGIN_EXPERIMENT("Test accuracy (and success rate) of localization in an environ
     results["epsilon"] = epsilons;
 
     fmt::print("{}\n", results.dump(4));
-
-    // START_RUN();
-    //     fmt::print("[iteration {}]\n", __exp_idx);
-    //     fflush(stdout);
-    //     env.runExperiment(params);
-    //     results += env.metrics;
-    // END_RUN();
-
-    
-    // fmt::print("numTimeouts: {}\n", results.numTimeouts);
-    // double numexps = (double)(__num_experiments - results.numTimeouts);
-    // fmt::print("time: {}\n", results.timeMiliseconds / numexps);
-    // fmt::print("conservativeSuccess: {}\n", results.conservativeSuccess / numexps);
-    // fmt::print("errorXYZ: {}\n", results.errorXYZ / numexps);
-    // fmt::print("errorTheta: {}\n", results.errorTheta / numexps);
-    // fmt::print("numVoxels: {}\n", results.numVoxels / numexps);
-    // fmt::print("numClusters: {}\n", results.numClusters / numexps);
-    // fmt::print("localizationVolume: {}\n", results.localizationVolume / numexps);
-    // fmt::print("localizationVolumePercentage: {}\n", results.localizationVolumePercentage / numexps);
-    // fmt::print("localizationVolumeXYT: {}\n", results.localizationVolumeXYT / numexps);
-    // fmt::print("localizationVolumePercentageXYT: {}\n", results.localizationVolumePercentageXYT / numexps);
-
 
 END_EXPERIMENT()

@@ -119,6 +119,7 @@ Scene.ObjectRelations = {
 
 -- Scene settings
 Scene.Settings = {
-    BackgroundColor = {100/255, 149/255, 253/255},
+    -- BackgroundColor = {100/255, 149/255, 253/255},
+    BackgroundColor = {0.7, 0.7, 0.7},
     Culling = true
 }

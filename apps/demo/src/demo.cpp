@@ -32,8 +32,11 @@ void DemoGUI::init() {
     json j = json::parse(buffer.toString());
     for (auto m : j) {
         double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
-        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = m["yaw"];
+        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = -(double)m["yaw"] + M_PI;
 
+        std::vector<double> ds;
+        ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
+        measurementSequences.push_back(ds);
         manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
         groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
     }
@@ -42,38 +45,6 @@ void DemoGUI::init() {
 
 
     fflush(stdout);
-}
-
-void DemoGUI::runRandomExperiment() {
-    std::chrono::steady_clock::time_point begin, end;    
-    std::chrono::duration<double, std::milli> __duration;
-    begin = std::chrono::steady_clock::now();
-
-    fdml::OdometrySequence odometrySequence = env.getToFCrown();
-    fdml::MeasurementSequence measurementSequence;
-    fdml::R3xS1 actualQ = env.getActualDroneLocation();
-    for (fdml::R3xS2 g : odometrySequence) {
-        fdml::R3xS2 g_ = actualQ * g;
-        FT dist = g_.measureDistance(env.getTree());
-        dist += (fdml::Random::randomDouble() * 2.0 - 1.0) * errorBound;
-        measurementSequence.push_back(dist);
-        fmt::print("{},", dist);
-    }
-    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 12, errorBound);
-
-    end = std::chrono::steady_clock::now();
-    __duration = end - begin;
-    print("FDML method: {} [sec]\n", __duration.count() / 1000.0f);
-
-    for (fdml::R3xS1_Voxel v : localization) {
-        if (v.contains(actualQ)) {fmt::print("!!!!!!!!!!!\n");
-        fmt::print("{} {} {} {} | GT {} {} {} {} | Contains: {}\n", 
-            v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation,
-            actualQ.position.x(), actualQ.position.y(), actualQ.position.z(), actualQ.orientation, 
-            v.contains(actualQ)
-        );}
-        // if (v.contains(actualQ)) fmt::print("!!!!!!!!!!!\n");
-    }
 }
 
 void DemoGUI::runManualExperiment() {
@@ -164,10 +135,6 @@ void DemoGUI::update(float deltaTime) {
             // ImGui::InputDouble("delta", &params.delta);
             ImGui::InputDouble("epsilon", &errorBound);
 
-            if (ImGui::Button("Run")) {
-                runRandomExperiment();
-            }
-
             ImGui::SeparatorText("Manual Experiments");
             if (ImGui::Button("<<") && !shouldPlay) {
                 currExpIdx = (currExpIdx - 10 + manualDistances.size()) % manualDistances.size();
@@ -213,6 +180,17 @@ void DemoGUI::update(float deltaTime) {
         static bool shouldCull = true;
         if (ImGui::Checkbox("Face Culling", &shouldCull))
             LE3GetActiveScene()->setCulling(shouldCull);
+        
+        if (pointCloud) {
+            float pointSize = pointCloud->getPointSize();
+            ImGui::SliderFloat("Point Size", &pointSize, 1.f, 30.f);
+            pointCloud->setPointSize(pointSize);
+
+            float opacity = pointCloud->getOpacity();
+            ImGui::SliderFloat("Opacity", &opacity, 0.f, 1.f);
+            pointCloud->setOpacity(opacity);
+        }
+        
 
     ImGui::End();
 }
@@ -228,11 +206,14 @@ void DemoGUI::loadEnvironment(std::string path) {
             LE3GetAssetManager().addStaticMesh(name, selectedEnv, true);
             LE3GetActiveScene()->addStaticModel(name, name, "M_room");
             FDML_LE3_LoadEnvironment(LE3GetAssetManager(), name, env);
+            pointCloud = nullptr;
         }
         else if (path.ends_with(".ply")) {
             LE3GetActiveScene()->addPointCloud(name);
             LE3GetActiveScene()->getObject<LE3PointCloud>(name)->fromFile(selectedEnv, true);
             LE3GetActiveScene()->getObject<LE3PointCloud>(name)->create();
+            FDML_LE3_LoadEnvironmentPointCloud(LE3GetActiveScene()->getObject<LE3PointCloud>(name), env, 1.0f);
+            pointCloud = LE3GetActiveScene()->getObject<LE3PointCloud>(name);
         }
     }
 
@@ -289,12 +270,17 @@ void DemoGUI::renderDebug() {
         debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
     }
 
+    LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f));
+    LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+    LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 1.f));
+
     // Draw bounding box
     debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
 }
 
 void DemoGUI::debugDrawToFCrown() {
     fdml::OdometrySequence tofCrown = env.getToFCrown();
+    int idx = 0;
     for (fdml::R3xS2 g : tofCrown) {
         fdml::R3xS2 g_ = env.getActualDroneLocation() * g;
         fdml::R3xS1_Voxel v;
@@ -303,7 +289,8 @@ void DemoGUI::debugDrawToFCrown() {
         v.topRightPosition = Point(g_.position.x() + size, g_.position.y() + size, g_.position.z() + size);
         debugDrawVoxel(v, glm::vec3(1.f, 0.f, 1.f));
 
-        FT dist = g_.measureDistance(env.getTree());
+        // FT dist = g_.measureDistance(env.getTree());
+        FT dist = measurementSequences[currExpIdx][idx++];
         if (dist < 0) continue;
         glm::vec3 pos(g_.position.x(), g_.position.z(), g_.position.y()); // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
         glm::vec3 color(1.f, 0.f, 1.f); if (dist > 4.0) color = glm::vec3(1.f, 0.f, 0.f);

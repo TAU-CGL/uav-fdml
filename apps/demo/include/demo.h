@@ -25,12 +25,15 @@ protected:
     std::vector<char> availableEnvsStr;
     std::string selectedEnv = "";
 
+    le3::LE3PointCloudPtr pointCloud;
+
     fdml::ExperimentEnv env;
     fdml::VoxelCloud localization;
     FT errorBound = 0.015;
 
     std::vector<std::string> manualDistances;
     std::vector<fdml::R3xS1> groundTruthLocations;
+    std::vector<std::vector<double>> measurementSequences;
     int currExpIdx = 0;
     float expIdxFraction = 0.f;
     float speed = 10.0f;

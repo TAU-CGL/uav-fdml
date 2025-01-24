@@ -8,5 +8,5 @@ raw/
 
 __pycache__/
 
-*.csv
-*.db
+# *.csv
+# *.db

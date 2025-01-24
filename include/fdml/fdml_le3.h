@@ -29,11 +29,18 @@ static void FDML_LE3_LoadEnvironment(le3::LE3AssetManager& assets, std::string e
     env.loadTriangles(triangles);
 }
 
-static void FDML_LE3_LoadEnvironmentPointCloud(le3::LE3PointCloudPtr pointCloud, fdml::ExperimentEnv& env) {
-    std::list<Point> points;
-    // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
-    for (auto p : pointCloud->getPoints()) {
-        points.push_back(Point(p.position[0], p.position[2], p.position[1]));
+static void FDML_LE3_LoadEnvironmentPointCloud(le3::LE3PointCloudPtr pointCloud, fdml::ExperimentEnv& env, float ratio = 1.f) {
+    auto& points = pointCloud->getPoints();
+    
+    std::list<Triangle> triangles;
+    for (int i = 0; i < points.size(); i++) {
+        // Sample random number between 0 and 1
+        float rnd = (float)rand() / RAND_MAX;
+        if (rnd > ratio) continue;
+
+        Point p(points[i].position[0], points[i].position[2], points[i].position[1]);
+        Triangle t(p, p, p);
+        triangles.push_back(t);
     }
-    // env.loadPoints(points);
+    env.loadTriangles(triangles);
 }

@@ -30,6 +30,7 @@ protected:
     fdml::ExperimentEnv env;
     fdml::VoxelCloud localization;
     FT errorBound = 0.015;
+    bool cluster = true;
 
     std::vector<std::string> manualDistances;
     std::vector<fdml::R3xS1> groundTruthLocations;

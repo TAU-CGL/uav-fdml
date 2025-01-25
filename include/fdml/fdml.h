@@ -230,7 +230,7 @@ namespace fdml {
         return true;
     }
     
-    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, FT errorBound = 0) {
+    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, FT errorBound = 0, bool cluster=true) {
         omp_set_num_threads(omp_get_max_threads());
 
         // Get squence of aggregated odometries
@@ -279,6 +279,11 @@ namespace fdml {
                 return VoxelCloud();
             }
         }
+
+        /////
+        if (!cluster)
+            return localization;
+        /////
 
         std::vector<VoxelCloud> clusters;
         for (auto v : localization) {

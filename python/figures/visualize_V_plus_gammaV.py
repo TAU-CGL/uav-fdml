@@ -8,11 +8,23 @@ NUM_SAMPLES = 10000
 
 class Ranges:
     def __init__(self):
-        self.x_range = [-1, 1]
-        self.y_range = [-0.2, 0.22]
-        self.theta_range = [0, 6]
-        self.gx = -10
-        self.gy = 20
+        # self.x_range = [-1, 1]
+        # self.y_range = [-0.2, 0.22]
+        # self.theta_range = [0, 6]
+        # self.gx = -1
+        # self.gy = 2
+
+        # self.x_range = [-0.1, 0.1]
+        # self.y_range = [-0.2, 0.22]
+        # self.theta_range = [0, 1]
+        # self.gx = -1
+        # self.gy = 2
+
+        self.x_range = [-0.00001, 0.00001]
+        self.y_range = [-0.00001, 0.00001]
+        self.theta_range = [0, 0.00001]
+        self.gx = -1
+        self.gy = 2
 
 def gamma1(gx, gy, theta):
     return np.array([gx * np.cos(theta) - gy * np.sin(theta), gx * np.sin(theta) + gy * np.cos(theta)])
@@ -133,13 +145,13 @@ if __name__ == "__main__":
     new_points1 = np.array(new_points1)
     new_points2 = np.array(new_points2)
 
-    X = new_points1[:, 0]
-    Y = new_points1[:, 1]
-    plt.scatter(X, Y)
+    # X = new_points1[:, 0]
+    # Y = new_points1[:, 1]
+    # plt.scatter(X, Y)
     X = new_points2[:, 0]
     Y = new_points2[:, 1]
     # draw much smaller dot size
-    plt.scatter(X, Y, s=0.5)
+    plt.scatter(X, Y, s=0.1)
 
     fwds = get_global_bounding_box(ranges)
     for box in fwds:

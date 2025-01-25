@@ -75,7 +75,7 @@ void DemoGUI::runManualExperiment() {
         fmt::print("{},", d);
     }
 
-    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 10, errorBound);
+    localization = fdml::localize(env.getTree(), odometrySequence, measurementSequence, env.getBoundingBox(), 10, errorBound, cluster);
 
     end = std::chrono::steady_clock::now();
     __duration = end - begin;
@@ -192,7 +192,8 @@ void DemoGUI::update(float deltaTime) {
             }
 
             ImGui::SliderFloat("Speed", &speed, 1.f, 25.f);
-        
+
+            ImGui::Checkbox("Cluster", &cluster);
         }
 
         ImGui::SeparatorText("Visualization");
@@ -289,12 +290,12 @@ void DemoGUI::renderDebug() {
         debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
     }
 
-    LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f));
-    LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
-    LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 1.f));
+    // LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f));
+    // LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+    // LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 1.f));
 
     // Draw bounding box
-    debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
+    // debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
 }
 
 void DemoGUI::debugDrawToFCrown() {

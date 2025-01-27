@@ -1,4 +1,4 @@
-#include "demo.h"
+#include "visualization.h"
 
 #ifdef __linux__
 #include <GL/glew.h>

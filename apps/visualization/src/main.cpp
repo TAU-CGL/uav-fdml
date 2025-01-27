@@ -1,9 +1,4 @@
-#include <queue>
-
-#include <fmt/core.h>
-using fmt::print, fmt::format;
-
-#include "demo.h"
+#include "visualization.h"
 
 int main() {
     fdml::Random::seed(0);

@@ -1,5 +1,5 @@
 if (WITH_VISUALIZATION)
-    project(demo)
+    project(visualization)
 
     if(APPLE)
         set(CMAKE_C_COMPILER clang)
@@ -44,7 +44,7 @@ if (WITH_VISUALIZATION)
 
     add_executable(${PROJECT_NAME} 
         src/main.cpp
-        src/demo.cpp
+        src/visualization.cpp
     )
     target_link_libraries(${PROJECT_NAME} PRIVATE le3 fmt::fmt ${Boost_LIBRARIES} GLEW::GLEW glm::glm assimp::assimp ${LUA_LIBRARIES} CGAL::CGAL OpenMP::OpenMP_CXX nlohmann_json::nlohmann_json)
     target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)

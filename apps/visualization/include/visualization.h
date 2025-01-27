@@ -9,7 +9,6 @@ using fmt::format, fmt::print;
 #include <le3.h>
 using namespace le3;
 
-#include "demo.h"
 #include <fdml/fdml.h>
 #include <fdml/fdml_le3.h>
 #include <fdml/fdml_utils.h>

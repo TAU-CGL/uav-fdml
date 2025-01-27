@@ -53,6 +53,10 @@ namespace fdml {
         R3xS1() : position(Point(0, 0, 0)), orientation(0) {}
         R3xS1(Point position, FT orientation) : position(position), orientation(orientation) {}
 
+        static FT deltaPosition(R3xS1 q1, R3xS1 q2) {
+            return sqrt(CGAL::squared_distance(q1.position, q2.position));
+        }
+
         R3xS2 operator*(const R3xS2& other) {
             FT px = position.x() + cos(orientation) * other.position.x() - sin(orientation) * other.position.y();
             FT py = position.y() + sin(orientation) * other.position.x() + cos(orientation) * other.position.y();

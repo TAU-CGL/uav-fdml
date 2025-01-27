@@ -87,16 +87,18 @@ namespace fdml {
             m_droneLocation = location;
         }
 
+        void createCrazyFlieCrown() {
+            m_tofCrown.clear();
+            double offset = 0.5 * 0.0325;
+            m_tofCrown.push_back(R3xS2(Point(offset,0,0), Point(1,0,0)));
+            m_tofCrown.push_back(R3xS2(Point(-offset,0,0), Point(-1,0,0)));
+            m_tofCrown.push_back(R3xS2(Point(0,offset,0), Point(0,1,0)));
+            m_tofCrown.push_back(R3xS2(Point(0,-offset,0), Point(0,-1,0)));
+            m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,1)));
+            m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,-1)));
+        }
         void createToFCrown(int k, FT zOffset, FT radius, Point direction) {
             m_tofCrown.clear();
-            // double offset = 0.5 * 0.0325;
-            // m_tofCrown.push_back(R3xS2(Point(offset,0,0), Point(1,0,0)));
-            // m_tofCrown.push_back(R3xS2(Point(-offset,0,0), Point(-1,0,0)));
-            // m_tofCrown.push_back(R3xS2(Point(0,offset,0), Point(0,1,0)));
-            // m_tofCrown.push_back(R3xS2(Point(0,-offset,0), Point(0,-1,0)));
-            // m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,1)));
-            // m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,-1)));
-            // for (int i = k-1; i >= 0; i--) {
             for (int i = 0; i < k; i++) {
                 FT angle = 2.0 * M_PI * (FT)i / (FT)k;
                 FT x = radius * cos(angle);
@@ -108,6 +110,19 @@ namespace fdml {
         }
         OdometrySequence getToFCrown() {
             return m_tofCrown;
+        }
+
+        R3xS1 bestPrediction(VoxelCloud localization) {
+            R3xS1 nearestLocation = localization[0].middle();
+            double bestDist = sqrt(CGAL::squared_distance(m_droneLocation.position, nearestLocation.position));
+            for (R3xS1_Voxel v : localization) {
+                double dist = R3xS1::deltaPosition(m_droneLocation, v.middle());
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    nearestLocation = v.middle();
+                }
+            }
+            return nearestLocation;
         }
 
     public:

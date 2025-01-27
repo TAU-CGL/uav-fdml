@@ -89,21 +89,22 @@ namespace fdml {
 
         void createToFCrown(int k, FT zOffset, FT radius, Point direction) {
             m_tofCrown.clear();
-            double offset = 0.5 * 0.0325;
-            m_tofCrown.push_back(R3xS2(Point(offset,0,0), Point(1,0,0)));
-            m_tofCrown.push_back(R3xS2(Point(-offset,0,0), Point(-1,0,0)));
-            m_tofCrown.push_back(R3xS2(Point(0,offset,0), Point(0,1,0)));
-            m_tofCrown.push_back(R3xS2(Point(0,-offset,0), Point(0,-1,0)));
-            m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,1)));
-            m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,-1)));
-            // for (int i = 0; i < k; i++) {
-            //     FT angle = 2.0 * M_PI * (FT)i / (FT)k;
-            //     FT x = radius * cos(angle);
-            //     FT y = radius * sin(angle);
-            //     FT dx = cos(angle) * direction.x() - sin(angle) * direction.y();
-            //     FT dy = sin(angle) * direction.x() + cos(angle) * direction.y();
-            //     m_tofCrown.push_back(R3xS2(Point(x, y, zOffset), Point(dx, dy, direction.z())));
-            // }
+            // double offset = 0.5 * 0.0325;
+            // m_tofCrown.push_back(R3xS2(Point(offset,0,0), Point(1,0,0)));
+            // m_tofCrown.push_back(R3xS2(Point(-offset,0,0), Point(-1,0,0)));
+            // m_tofCrown.push_back(R3xS2(Point(0,offset,0), Point(0,1,0)));
+            // m_tofCrown.push_back(R3xS2(Point(0,-offset,0), Point(0,-1,0)));
+            // m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,1)));
+            // m_tofCrown.push_back(R3xS2(Point(0,0,0), Point(0,0,-1)));
+            // for (int i = k-1; i >= 0; i--) {
+            for (int i = 0; i < k; i++) {
+                FT angle = 2.0 * M_PI * (FT)i / (FT)k;
+                FT x = radius * cos(angle);
+                FT y = radius * sin(angle);
+                FT dx = cos(angle) * direction.x() - sin(angle) * direction.y();
+                FT dy = sin(angle) * direction.x() + cos(angle) * direction.y();
+                m_tofCrown.push_back(R3xS2(Point(x, y, zOffset), Point(dx, dy, direction.z())));
+            }
         }
         OdometrySequence getToFCrown() {
             return m_tofCrown;

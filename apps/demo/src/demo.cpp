@@ -25,24 +25,56 @@ void DemoGUI::init() {
 
     initDrone();
     initAvailableEnvs();
-    // loadEnvironment("/fdml/scans/labs/lab446a.ply");
-    loadEnvironment("/fdml/scans/labs/lab363.ply");
+    loadEnvironment("/fdml/scans/labs/lab446a.ply");
+    // loadEnvironment("/fdml/scans/labs/lab363.ply");
 
     // Load json measurements
     // LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_446a.json");
-    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_363.json");
-    json j = json::parse(buffer.toString());
-    for (auto m : j) {
-        double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
-        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = 0;//-(double)m["yaw"] + M_PI;
+    // LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_363.json");
+    // json j = json::parse(buffer.toString());
+    // for (auto m : j) {
+    //     double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
+    //     double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = 0;//-(double)m["yaw"] + M_PI;
 
-        std::vector<double> ds;
-        ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
-        measurementSequences.push_back(ds);
-        manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
-        groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
-    }
+    //     std::vector<double> ds;
+    //     ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
+    //     measurementSequences.push_back(ds);
+    //     manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
+    //     groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
+    // }
 
+    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
+    //     1.502, 1.502, 1.525, 1.513, 1.570, 1.610, 1.606, 1.506 
+    // ));
+    // measurementSequences.push_back(std::vector<double>({1.502, 1.502, 1.525, 1.513, 1.570, 1.610, 1.606, 1.506 }));
+    // groundTruthLocations.push_back(fdml::R3xS1(Point(0, 0, 1), -1.57));
+
+    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
+    //     1.495, 1.500, 1.529, 1.386, 0.949, 1.336, 1.235, 1.179
+    // ));
+    // measurementSequences.push_back(std::vector<double>({1.495, 1.500, 1.529, 1.386, 0.949, 1.336, 1.235, 1.179}));
+    // groundTruthLocations.push_back(fdml::R3xS1(Point(0, 0, 1), 0));
+
+    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
+    //     1.495, 1.497, 1.528, 1.488, 1.566, 1.646, 1.493, 1.456
+    // ));
+    // measurementSequences.push_back(std::vector<double>({1.495, 1.497, 1.528, 1.488, 1.566, 1.646, 1.493, 1.456}));
+    // groundTruthLocations.push_back(fdml::R3xS1(Point(1, 0, 1), 3.14));
+
+    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
+    //     1.326, 1.469, 1.474, 1.463, 1.524, 1.545, 1.569, 1.516
+    // ));
+    // measurementSequences.push_back(std::vector<double>({1.326, 1.469, 1.474, 1.463, 1.524, 1.545, 1.569, 1.516}));
+    // groundTruthLocations.push_back(fdml::R3xS1(Point(1, 0, 1), -1.57));
+
+
+    manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
+        1.477, 2.018, 1.991, 1.715, 1.854, 1.891, 1.778, 1.782
+    ));
+    measurementSequences.push_back(std::vector<double>({1.477, 2.018, 1.991, 1.715, 1.854, 1.891, 1.778, 1.782 }));
+    groundTruthLocations.push_back(fdml::R3xS1(Point(0.8, 0, 1.5), 1.57));
+
+    
     env.setActualDroneLocation(groundTruthLocations[currExpIdx]);
 
 
@@ -102,7 +134,7 @@ void DemoGUI::runManualExperiment() {
         }
     }
 
-    fdml::R3xS1 actualLocation(groundTruthLocations[currExpIdx].position, nearestLocation.orientation);
+    fdml::R3xS1 actualLocation(groundTruthLocations[currExpIdx].position, nearestLocation.orientation + 3.14);
     env.setActualDroneLocation(actualLocation);
 }
 

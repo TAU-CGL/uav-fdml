@@ -20,17 +20,69 @@ public:
     void update(float deltaTime);
     
 protected:
+
+    ////////////////////////////////////////////////
+
+    ////////////////////////
+    // Environment panel
+    ////////////////////////
+    
+    // Params
     std::vector<std::string> availableEnvs;
     std::vector<char> availableEnvsStr;
     std::string selectedEnv = "";
-
     le3::LE3PointCloudPtr pointCloud;
 
+    // Methods
+    void initAvailableEnvs();
+    std::string envDisplayName(std::string path);
+    std::string envMeshName(std::string path);
+    void loadEnvironment(std::string path);
+
+    ////////////////////////////////////////////////
+
+    ////////////////////////
+    // Drone control panel
+    ////////////////////////
+
+    // Params
+
+    // Methods
+    void initDrone();
+    void updateDrone();
+
+    ////////////////////////////////////////////////
+
+    ////////////////////////
+    // FDML parameters panel
+    ////////////////////////
+
+    // Params
     fdml::ExperimentEnv env;
     fdml::VoxelCloud localization;
     FT errorBound = 0.015;
     bool cluster = true;
 
+    // Methods
+    void runManualExperiment();
+
+    ////////////////////////////////////////////////
+
+    ////////////////////////
+    // Online operation panel
+    ////////////////////////
+
+    // Params
+
+    // Methods
+
+    ////////////////////////////////////////////////
+
+    ////////////////////////
+    // Offline trajectory panel
+    ////////////////////////
+
+    // Params
     std::vector<std::string> manualDistances;
     std::vector<fdml::R3xS1> groundTruthLocations;
     std::vector<std::vector<double>> measurementSequences;
@@ -38,17 +90,21 @@ protected:
     float expIdxFraction = 0.f;
     float speed = 10.0f;
     bool shouldPlay = false;
+
+    // Methods
+
+    ////////////////////////////////////////////////
+
+    ////////////////////////
+    // Graphics settings panel
+    ////////////////////////
+
+    // Params
     bool showAxes = false;
-    
-    void loadEnvironment(std::string path);
-    void runManualExperiment();
+
+    // Methods
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
     void debugDrawToFCrown();
 
-    void initDrone();
-    void updateDrone();
-
-    void initAvailableEnvs();
-    std::string envDisplayName(std::string path);
-    std::string envMeshName(std::string path);
+    ////////////////////////////////////////////////    
 };

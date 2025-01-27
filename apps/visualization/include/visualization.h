@@ -38,15 +38,12 @@ protected:
     float expIdxFraction = 0.f;
     float speed = 10.0f;
     bool shouldPlay = false;
+    bool showAxes = false;
     
     void loadEnvironment(std::string path);
-    void runRandomExperiment();
     void runManualExperiment();
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
     void debugDrawToFCrown();
-
-    void initGizmo();
-    void updateGizmo();
 
     void initDrone();
     void updateDrone();

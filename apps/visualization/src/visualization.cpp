@@ -19,7 +19,6 @@ void DemoGUI::init() {
     LE3GetSceneManager().getActiveScene()->getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
     LE3GetSceneManager().getActiveScene()->getMainCamera()->setPitchYaw(0.f, -1.57f);
     LE3GetActiveScene()->setCulling(true);
-    initGizmo();
 
     /// -------------------------------
 
@@ -29,51 +28,19 @@ void DemoGUI::init() {
     // loadEnvironment("/fdml/scans/labs/lab363.ply");
 
     // Load json measurements
-    // LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_446a.json");
+    LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_446a.json");
     // LE3DatBuffer buffer = LE3GetDatFileSystem().getFileContent("/fdml/experiments/exp_mr_lh_363.json");
-    // json j = json::parse(buffer.toString());
-    // for (auto m : j) {
-    //     double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
-    //     double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = 0;//-(double)m["yaw"] + M_PI;
+    json j = json::parse(buffer.toString());
+    for (auto m : j) {
+        double front = m["front"]; double back = m["back"]; double left = m["left"]; double right = m["right"];
+        double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = 0;//-(double)m["yaw"] + M_PI;
 
-    //     std::vector<double> ds;
-    //     ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
-    //     measurementSequences.push_back(ds);
-    //     manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
-    //     groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
-    // }
-
-    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
-    //     1.502, 1.502, 1.525, 1.513, 1.570, 1.610, 1.606, 1.506 
-    // ));
-    // measurementSequences.push_back(std::vector<double>({1.502, 1.502, 1.525, 1.513, 1.570, 1.610, 1.606, 1.506 }));
-    // groundTruthLocations.push_back(fdml::R3xS1(Point(0, 0, 1), -1.57));
-
-    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
-    //     1.495, 1.500, 1.529, 1.386, 0.949, 1.336, 1.235, 1.179
-    // ));
-    // measurementSequences.push_back(std::vector<double>({1.495, 1.500, 1.529, 1.386, 0.949, 1.336, 1.235, 1.179}));
-    // groundTruthLocations.push_back(fdml::R3xS1(Point(0, 0, 1), 0));
-
-    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
-    //     1.495, 1.497, 1.528, 1.488, 1.566, 1.646, 1.493, 1.456
-    // ));
-    // measurementSequences.push_back(std::vector<double>({1.495, 1.497, 1.528, 1.488, 1.566, 1.646, 1.493, 1.456}));
-    // groundTruthLocations.push_back(fdml::R3xS1(Point(1, 0, 1), 3.14));
-
-    // manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
-    //     1.326, 1.469, 1.474, 1.463, 1.524, 1.545, 1.569, 1.516
-    // ));
-    // measurementSequences.push_back(std::vector<double>({1.326, 1.469, 1.474, 1.463, 1.524, 1.545, 1.569, 1.516}));
-    // groundTruthLocations.push_back(fdml::R3xS1(Point(1, 0, 1), -1.57));
-
-
-    manualDistances.push_back(fmt::format("{},{},{},{},{},{},{},{},-1,-1,-1,-1,-1,-1,-1,-1",
-        1.477, 2.018, 1.991, 1.715, 1.854, 1.891, 1.778, 1.782
-    ));
-    measurementSequences.push_back(std::vector<double>({1.477, 2.018, 1.991, 1.715, 1.854, 1.891, 1.778, 1.782 }));
-    groundTruthLocations.push_back(fdml::R3xS1(Point(0.8, 0, 1.5), 1.57));
-
+        std::vector<double> ds;
+        ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
+        measurementSequences.push_back(ds);
+        manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
+        groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
+    }
     
     env.setActualDroneLocation(groundTruthLocations[currExpIdx]);
 
@@ -141,9 +108,6 @@ void DemoGUI::runManualExperiment() {
 void DemoGUI::update(float deltaTime) {
     
     LE3SimpleDemo::update(deltaTime);
-    updateGizmo();
-    updateDrone();
-
 
     if (shouldPlay) {
         expIdxFraction += deltaTime * speed;
@@ -273,7 +237,6 @@ void DemoGUI::loadEnvironment(std::string path) {
 
 void DemoGUI::initAvailableEnvs() {
     for (auto filename : LE3GetDatFileSystem().getFilesFromDir("/fdml/scans")) {
-        // fmt::print("Trying: {}\n", filename);
         if (filename.ends_with(".ply")) {
             availableEnvs.push_back(filename);
             for (auto c : envDisplayName(filename))
@@ -299,35 +262,16 @@ std::string DemoGUI::envMeshName(std::string path) {
 
 
 void DemoGUI::renderDebug() {
-    // Draw configurations: measure downards (and draw hitpoint)
-    int idx = 0;
-    // for (auto q : configurations) {
-    //     if (idx++ < configurationsHead) continue;
-    //     double distance = q.measureDistance(env.getTree());
-    //     glm::vec3 pos(q.position.x(), q.position.z(), q.position.y()); // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
-    //     LE3GetVisualDebug().drawDebugLine(
-    //         pos, pos - glm::vec3(0.f, distance, 0.f),
-    //         glm::vec3(1.f, 0.f, 1.f)
-    //     );
-    //     LE3GetVisualDebug().drawDebugBox(
-    //         pos - glm::vec3(0.f, distance, 0.f),
-    //         glm::quat(), glm::vec3(0.05f, 0.05f, 0.05f), glm::vec3(1.f, 0.f, 1.f));
-    // }
-
     glClear(GL_DEPTH_BUFFER_BIT);
-
     debugDrawToFCrown();
-
     for (fdml::R3xS1_Voxel v : localization) {
         debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
     }
-
-    // LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f));
-    // LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
-    // LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 1.f));
-
-    // Draw bounding box
-    // debugDrawVoxel(env.getBoundingBox(), glm::vec3(1.f, 0.f, 0.f));
+    if (showAxes) {
+        LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f));
+        LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+        LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 1.f));
+    }
 }
 
 void DemoGUI::debugDrawToFCrown() {
@@ -357,20 +301,12 @@ void DemoGUI::debugDrawToFCrown() {
 }
 
 void DemoGUI::initDrone() {
-    // LE3GetSceneManager().getActiveScene()->addStaticModel("__marker", "SM_cursor", "M_cursor", "", DRAW_PRIORITY_HIGH);
     LE3GetSceneManager().getActiveScene()->addStaticModel("__drone", "SM_drone", "M_drone");
-
-    // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setScale(1.75f);
-    // LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(0.05f);
-
     env.createToFCrown(16, 0, 0.07687 + 0.01017, Point(0.5 * sqrt(2), 0, -0.5 * sqrt(2)));
 }
 void DemoGUI::updateDrone() {
     // Since in LightEngine3 the up axis is Y, we need to swap the Y and Z coordinates
     fdml::R3xS1 q = env.getActualDroneLocation();
-    // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
-    // LE3GetSceneManager().getActiveScene()->getObject("__marker")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
-
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setRotationRPY(0.f, 0.f, -q.orientation);
     LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setPosition(glm::vec3(CGAL::to_double(q.position.x()), CGAL::to_double(q.position.z()), CGAL::to_double(q.position.y())));
 }
@@ -379,20 +315,4 @@ void DemoGUI::debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color) {
     glm::vec3 bottomLeft = glm::vec3(voxel.bottomLeftPosition.x(), voxel.bottomLeftPosition.z(), voxel.bottomLeftPosition.y());
     glm::vec3 topRight = glm::vec3(voxel.topRightPosition.x(), voxel.topRightPosition.z(), voxel.topRightPosition.y());
     LE3GetVisualDebug().drawDebugBox(bottomLeft + 0.5f * (topRight - bottomLeft), glm::quat(), topRight - bottomLeft, color);
-}
-
-void DemoGUI::initGizmo() {
-    // Add gizmo to bottom left (for clatiry)
-    LE3GetSceneManager().getActiveScene()->addCustomObject("gizmo", std::make_shared<LE3Gizmo>());
-    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setHoverable(false);
-    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setDynamicScale(false);
-    LE3GetSceneManager().getActiveScene()->getObject<LE3Gizmo>("gizmo")->setMaterial(LE3GetAssetManager().getMaterial("M_custom_gizmo"));
-    LE3GetActiveScene()->getObject("gizmo")->getTransform().setPosition(glm::vec3(0.f, .0f, -5.f));
-}
-void DemoGUI::updateGizmo() {
-    glm::vec3 cameraPos = LE3GetActiveScene()->getMainCamera()->getPosition();
-    glm::vec3 cameraForward = LE3GetActiveScene()->getMainCamera()->getForward();
-    glm::vec3 cameraRight = LE3GetActiveScene()->getMainCamera()->getRight();
-    glm::vec3 cameraUp = LE3GetActiveScene()->getMainCamera()->getUp();
-    glm::vec3 gizmoPosition = cameraPos + cameraForward * 0.5f + cameraRight * 0.0f + cameraUp * 0.0f;
 }

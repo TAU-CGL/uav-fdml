@@ -406,6 +406,7 @@ void DemoGUI::debugDrawToFCrown() {
 
 void DemoGUI::initDrone() {
     LE3GetSceneManager().getActiveScene()->addStaticModel("__drone", "SM_drone", "M_drone");
+    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(glm::vec3(2.f));
     setupDroneSensor();
 }
 void DemoGUI::setupDroneSensor() {
@@ -451,7 +452,10 @@ void DemoGUI::debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3
         glm::vec3 p1 = glm::vec3(trajectory[i].position.x(), trajectory[i].position.z(), trajectory[i].position.y());
         glm::vec3 p2 = glm::vec3(trajectory[i + 1].position.x(), trajectory[i + 1].position.z(), trajectory[i + 1].position.y());
         glm::vec3 tmpColor = color;
-        if (p1.y > 20.f || p2.y > 20.f) tmpColor = glm::vec3(1.f, 0.f, 0.f);
+        if (p1.y > 20.f || p2.y > 20.f) {
+            tmpColor = glm::vec3(1.f, 0.f, 0.f);
+            continue;
+        }
         LE3GetVisualDebug().drawDebugLine(p1, p2, tmpColor);
     }
 }

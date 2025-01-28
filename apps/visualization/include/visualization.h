@@ -129,7 +129,7 @@ protected:
     void panelGraphics();
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
     void debugDrawToFCrown();
-    void debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3 color, bool smooth, int smoothWindow=10);
+    void debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3 color, bool smooth, int smoothWindow=20);
 
     ////////////////////////////////////////////////    
 };

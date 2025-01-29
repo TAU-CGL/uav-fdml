@@ -27,10 +27,17 @@ void DemoGUI::init() {
     initAvailableTrajectories();
     loadEnvironment(availableEnvs[0]);
 
-    // Load json measurements
+    // Setup online demo
+    networkSpinner = std::make_shared<LE3NetworkSpinner>();
+    LE3GetActiveScene()->addCustomObject("__networkSpinner", networkSpinner);
+    networkSpinner->setSend([&]() {
+        return LE3GetNetworking().sendRequest(LE3NetworkRequestType::GET, m_url + "/get_recent_measurement"); 
+    });
+    networkSpinner->setOnResponse([](LE3NetworkRequest nr) {
+            fmt::print("{}\n", nr.response);
+    });
+    networkSpinner->start();
     
-
-
     fflush(stdout);
 }
 

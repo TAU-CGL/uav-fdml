@@ -17,7 +17,8 @@ constexpr float DEFAULT_PC_SIZE = 3.f;
 constexpr float DEFAULT_PC_OPACITY = 0.2f;
 
 class DemoGUI : public LE3SimpleDemo {
-public:   
+public:
+    DemoGUI(std::string url) : m_url(url) {}
     void init();
     void renderDebug();
     void update(float deltaTime);
@@ -88,6 +89,8 @@ protected:
     ////////////////////////
 
     // Params
+    std::string m_url;
+    LE3NetworkSpinnerPtr networkSpinner;
 
     // Methods
     void panelOnline();

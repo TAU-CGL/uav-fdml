@@ -1,0 +1,13 @@
+[Unit]
+Description=FDML Server
+After=network.target
+
+[Service]
+User=<YOUR_USERNAME>
+Group=www-data
+WorkingDirectory=<SERVER_ROOT_DIR>
+Environment="PATH=/home/<YOUR_USERNAME>/.local/bin:/home/<YOUR_USERNAME>/gems/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+ExecStart=<SERVER_ROOT_DIR>/gunicorn_startup.sh
+
+[Install]
+WantedBy=multi-user.target

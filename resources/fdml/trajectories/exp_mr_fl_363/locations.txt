@@ -1,0 +1,7 @@
+for each file, approximate x, y, z and yaw are given (yaw might need to be multiplied by -1)
+measurements_1: (0,0,0.721), 0 (mathces the first video that Omri sent)
+measurements_2: (60,-25,0.795), pi/4
+measurements_3: (60,0,0.795), 0
+measurements_4: (145,55,0.754), pi
+measurements_5: (170,-80,0.772), 7/18*pi (matches the second video that Tomer sent)
+measurements_dynamic: matches the dynamic video that Michael sent

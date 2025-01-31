@@ -1,0 +1,10 @@
+for each file, approximate x, y and yaw are given (yaw might need to be multiplied by -1)
+measurements_1: (0,0), 0
+measurements_2: (40,0), -pi/4
+measurements_3: (70,-40), -pi/2 (matches the first video that Tomer sent)
+measurements_4: (80,50), 0
+measurements_5: (130,0), pi/4 (matches the second video that Tomer sent)
+measurements_6: (100,-45), pi/2 (matches the third video that Tomer sent)
+measurements_7: (190,-60), 0
+measurements_dynamic_1: matches the first dynamic video that Tomer sent
+measurements_dynamic_2: matches the second dynamic video that Tomer sent

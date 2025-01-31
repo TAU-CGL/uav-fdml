@@ -7,17 +7,20 @@ Scene.Shaders = {
     }
 }
 Scene.Textures = {
-    {
-        Name = "T_room",
-        Path = "/fdml/old/240521-141038/240521-141038.jpg"
-    },
+    -- {
+    --     Name = "T_room",
+    --     -- Path = "/fdml/old/240521-141038/240521-141038.jpg"
+    --     Path = "/fdml/scans/labs/lab446a.jpg"
+    -- },
     {
         Name = "T_DIF_drone",
-        Path = "/fdml/drone/T_DIF_drone.png"
+        -- Path = "/fdml/drone/T_DIF_drone.png"
+        Path = "/fdml/drone/T_DIF_crazyflie.png"
     },
     {
         Name = "T_SPEC_drone",
-        Path = "/fdml/drone/T_MTL_drone.png"
+        -- Path = "/fdml/drone/T_MTL_drone.png"
+        Path = "/fdml/drone/T_SPEC_crazyflie.png"
     },
     {
         Name = "T_basilica",
@@ -82,7 +85,7 @@ Scene.StaticMeshes = {
     },
     {
         Name = "SM_drone",
-        Path = "/fdml/drone/SM_drone.fbx",
+        Path = "/fdml/drone/SM_crazyflie.obj",
     },
 }
 Scene.SkeletalMeshes = {
@@ -101,14 +104,14 @@ Scene.Objects = {
     --     MeshName = "SM_room",
     --     MaterialName = "M_room",
     -- },
-    {
-        Type = "StaticModel",
-        Name = "demoDrone",
-        MeshName = "SM_drone",
-        MaterialName = "M_drone",
-        Position = {0, -5, 0},
-        Scale = {0.5, 0.5, 0.5},
-    },
+    -- {
+    --     Type = "StaticModel",
+    --     Name = "demoDrone",
+    --     MeshName = "SM_drone",
+    --     MaterialName = "M_drone",
+    --     Position = {0, -5, 0},
+    --     Scale = {0.5, 0.5, 0.5},
+    -- },
 }
 
 Scene.ObjectRelations = {
@@ -116,6 +119,7 @@ Scene.ObjectRelations = {
 
 -- Scene settings
 Scene.Settings = {
-    BackgroundColor = {100/255, 149/255, 253/255},
+    -- BackgroundColor = {100/255, 149/255, 253/255},
+    BackgroundColor = {0.7, 0.7, 0.7},
     Culling = true
 }

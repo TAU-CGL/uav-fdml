@@ -6,8 +6,8 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/AABB_triangle_primitive.h>
+#include <CGAL/AABB_traits_3.h>
+#include <CGAL/AABB_triangle_primitive_3.h>
 
 using K = CGAL::Simple_cartesian<double>;
 using FT = K::FT;
@@ -17,7 +17,7 @@ using Point = K::Point_3;
 using Vector = K::Vector_3;
 using Box = K::Iso_cuboid_3;
 using Triangle = K::Triangle_3;
-using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primitive<K, std::list<Triangle>::iterator>>>;
+using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_3<K, CGAL::AABB_triangle_primitive_3<K, std::list<Triangle>::iterator>>>;
 
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
@@ -28,6 +28,24 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits<K, CGAL::AABB_triangle_primit
 #define TIMEOUT 30
 
 namespace fdml {
+    struct R3xS2 {
+        Point position;
+        Point direction;
+
+        R3xS2() : position(Point(0,0,0)), direction(Point(1,0,0)) {}
+        R3xS2(Point position, Point direction) : position(position), direction(direction) {}
+        
+        double measureDistance(AABBTree& room) {
+            Point target(position.x() + direction.x(), position.y() + direction.y(), position.z() + direction.z()); 
+            Ray ray(this->position, target);
+            auto result = room.first_intersection(ray);
+            if (!result.has_value()) { return -1; }
+            // const Point* p = boost::get<Point>(&(result->first));
+            auto taken = *std::move(result);
+            return sqrt(CGAL::squared_distance(this->position, std::get<Point>(taken.first)));
+        }
+    };
+
     struct R3xS1 {
         Point position;
         FT orientation;
@@ -35,42 +53,21 @@ namespace fdml {
         R3xS1() : position(Point(0, 0, 0)), orientation(0) {}
         R3xS1(Point position, FT orientation) : position(position), orientation(orientation) {}
 
-        R3xS1 operator*(const R3xS1& other) {
-            FT newOrientation = orientation + other.orientation;
-            FT x = other.position.x() + position.x() * cos(other.orientation) - position.y() * sin(other.orientation);
-            FT y = other.position.y() + position.x() * sin(other.orientation) + position.y() * cos(other.orientation);
-            FT z = other.position.z() + position.z();
-            Point newPosition(x, y, z);
-            return R3xS1(newPosition, newOrientation);
+        static FT deltaPosition(R3xS1 q1, R3xS1 q2) {
+            return sqrt(CGAL::squared_distance(q1.position, q2.position));
         }
 
-        R3xS1 operator/(const R3xS1& other) {
-            FT newOrientation = orientation - other.orientation;
-            FT x = cos(other.orientation) * (position.x() - other.position.x()) + sin(other.orientation) * (position.y() - other.position.y());
-            FT y = -sin(other.orientation) * (position.x() - other.position.x()) + cos(other.orientation) * (position.y() - other.position.y());
-            FT z = position.z() - other.position.z();
-            Point newPosition(x, y, z);
-            return R3xS1(newPosition, newOrientation);
-        }
-
-        double measureDistance(AABBTree& room) {
-            Point down(this->position.x(), this->position.y(), this->position.z() - 1.0);
-            Ray ray(this->position, down);
-            auto result = room.first_intersection(ray);
-            if (!result.has_value()) { return -1; }
-            const Point* p = boost::get<Point>(&(result->first));
-            return sqrt(CGAL::squared_distance(this->position, *p));
+        R3xS2 operator*(const R3xS2& other) {
+            FT px = position.x() + cos(orientation) * other.position.x() - sin(orientation) * other.position.y();
+            FT py = position.y() + sin(orientation) * other.position.x() + cos(orientation) * other.position.y();
+            FT pz = position.z() + other.position.z();
+            FT dx = cos(orientation) * other.direction.x() - sin(orientation) * other.direction.y();
+            FT dy = sin(orientation) * other.direction.x() + cos(orientation) * other.direction.y();
+            return R3xS2(Point(px, py, pz), Point(dx, dy, other.direction.z()));
         }
     };
-    using OdometrySequence = std::vector<R3xS1>;
+    using OdometrySequence = std::vector<R3xS2>;
     using MeasurementSequence = std::vector<double>;
-
-    struct ErrorBounds {
-        FT errorOdometryX, errorOdometryY, errorOdometryZ, errorOdometryR;
-        FT errorDistance;
-
-        ErrorBounds() : errorOdometryX(0), errorOdometryY(0), errorOdometryZ(0), errorOdometryR(0), errorDistance(0) {}
-    };
 
     struct R3xS1_Voxel {
     public:
@@ -90,6 +87,19 @@ namespace fdml {
             for (auto& v: temp) v.splitSingleAxis(out, SplitAxis::SPLIT_R);
         }
 
+        inline R3xS1 middle() const {
+            Point middlePosition = Point((bottomLeftPosition.x() + topRightPosition.x()) / 2, (bottomLeftPosition.y() + topRightPosition.y()) / 2, (bottomLeftPosition.z() + topRightPosition.z()) / 2);
+            FT middleRotation = (bottomLeftRotation + topRightRotation) / 2;
+            return R3xS1(middlePosition, middleRotation);
+        }
+
+        inline FT squareDiameter() const {
+            return 
+                CGAL::squared_distance(bottomLeftPosition, topRightPosition) + 
+                (topRightRotation - bottomLeftRotation) * (topRightRotation - bottomLeftRotation)
+            ;
+        }
+
         FT volume() {
             return (topRightPosition.x() - bottomLeftPosition.x()) * 
                 (topRightPosition.y() - bottomLeftPosition.y()) * 
@@ -103,96 +113,53 @@ namespace fdml {
                 (topRightRotation - bottomLeftRotation);
         }
 
-        inline void _calcBoundX(FT blR, FT trR, FT gx, FT gy, FT& minX, FT& maxX) {
-            std::vector<FT> thetas;
-            thetas.push_back(blR);
-            thetas.push_back(trR);
-            for (int k = -3; k <= 3; k++) {
-                FT tmp = atan(-gy / gx) + k * M_PI;
-                if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
-            }
-            minX = INFTY, maxX = -INFTY;
-            for (auto& theta : thetas) {
-                FT x = gx * cos(theta) - gy * sin(theta);
-                minX = MIN(minX, x);
-                maxX = MAX(maxX, x);
-            }
+
+        inline Point gamma_gd(FT theta, R3xS2 g, FT d) {
+            // gamma_gd(theta) = R_theta * (g_p + d * g_r)
+            FT cost = cos(theta), sint = sin(theta);
+            FT x = cost * (g.position.x() + d * g.direction.x()) - sint * (g.position.y() + d * g.direction.y());
+            FT y = sint * (g.position.x() + d * g.direction.x()) + cost * (g.position.y() + d * g.direction.y());
+            FT z = g.position.z() + d * g.direction.z();
+            return Point(x, y, z);
         }
 
-        inline void _calcBoundY(FT blR, FT trR, FT gx, FT gy, FT& minY, FT& maxY) {
+        R3xS1_Voxel forwardOdometry(R3xS2 g, FT d, FT errorBound) {
+            FT alpha1 = g.position.x() + d * g.direction.x();
+            FT alpha2 = g.position.y() + d * g.direction.y();
+            FT alpha3 = g.position.z() + d * g.direction.z();
+
+            FT beta1 = atan(-alpha2 / alpha1);
+            FT beta2 = atan(alpha1 / alpha2);
+
             std::vector<FT> thetas;
-            thetas.push_back(blR);
-            thetas.push_back(trR);
-            for (int k = -4; k <= 4; k++) {
-                FT tmp = atan(gx / gy) + k * M_PI;
-                if (tmp >= blR && tmp <= trR) thetas.push_back(tmp);
+            thetas.push_back(this->bottomLeftRotation);
+            thetas.push_back(this->topRightRotation);
+            for (int k = -3; k < 3; k++) {
+                if (beta1 + k * M_PI <= topRightRotation && beta1 + k * M_PI >= bottomLeftRotation) thetas.push_back(beta1 + k * M_PI);
+                if (beta2 + k * M_PI <= topRightRotation && beta2 + k * M_PI >= bottomLeftRotation) thetas.push_back(beta2 + k * M_PI);
             }
-            minY = INFTY, maxY = -INFTY;
-            for (auto& theta : thetas) {
-                FT y = gx * sin(theta) + gy * cos(theta);
-                minY = MIN(minY, y);
-                maxY = MAX(maxY, y);
+
+            FT minX = INFINITY, maxX = -INFINITY;
+            FT minY = INFINITY, maxY = -INFINITY;
+            for (FT theta : thetas) {
+                Point tmp = gamma_gd(theta, g, d);
+                minX = MIN(minX, tmp.x()); maxX = MAX(maxX, tmp.x());
+                minY = MIN(minY, tmp.y()); maxY = MAX(maxY, tmp.y());
             }
-        }
-
-        // Apply the g_tilde offset to the voxel as described in the paper
-        R3xS1_Voxel forwardOdometry(R3xS1 g_tilde, FT measurement, ErrorBounds errorBounds, int iteration) {
-            // Find X axis bounds
-            FT minX = INFTY, maxX = -INFTY;
-            FT tmp1, tmp2;
-            _calcBoundX(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            _calcBoundX(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            _calcBoundX(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            _calcBoundX(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minX = MIN(minX, tmp1); maxX = MAX(maxX, tmp2);
-            minX += bottomLeftPosition.x();
-            maxX += topRightPosition.x();
-
-            // Find Y axis bounds
-            FT minY = INFTY, maxY = -INFTY;
-            _calcBoundY(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            _calcBoundY(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() - errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            _calcBoundY(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() - errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            _calcBoundY(bottomLeftRotation, topRightRotation, 
-                g_tilde.position.x() + errorBounds.errorOdometryX * iteration, 
-                g_tilde.position.y() + errorBounds.errorOdometryY * iteration, tmp1, tmp2); 
-                minY = MIN(minY, tmp1); maxY = MAX(maxY, tmp2);
-            minY += bottomLeftPosition.y();
-            maxY += topRightPosition.y();
-
-            // Find Z axis bounds
-            FT minZ = bottomLeftPosition.z() + g_tilde.position.z() - measurement - errorBounds.errorDistance - errorBounds.errorOdometryZ * iteration;
-            FT maxZ = topRightPosition.z() + g_tilde.position.z() - measurement + errorBounds.errorDistance + errorBounds.errorOdometryZ * iteration;
+            minX += bottomLeftPosition.x(); maxX += topRightPosition.x();
+            minY += bottomLeftPosition.y(); maxY += topRightPosition.y();
+            FT minZ = bottomLeftPosition.z() + alpha3;
+            FT maxZ = topRightPosition.z() + alpha3;
 
             R3xS1_Voxel v;
-            v.bottomLeftPosition = Point(minX, minY, minZ);
-            v.topRightPosition = Point(maxX, maxY, maxZ);
+            v.bottomLeftPosition = Point(minX - errorBound, minY - errorBound, minZ - errorBound);
+            v.topRightPosition = Point(maxX + errorBound, maxY + errorBound, maxZ + errorBound);
             v.bottomLeftRotation = v.topRightRotation = 0;
             return v;
         }
 
-        bool predicate(R3xS1 g_tilde, FT measurement, AABBTree& env, ErrorBounds errorBounds, int iteration) {
-            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement, errorBounds, iteration);
+        bool predicate(R3xS2 g_tilde, FT measurement, AABBTree& env, FT errorBound, int iteration) {
+            R3xS1_Voxel v = forwardOdometry(g_tilde, measurement, errorBound);
             Box query(v.bottomLeftPosition, v.topRightPosition);
             return env.do_intersect(query);
         }
@@ -216,10 +183,17 @@ namespace fdml {
         }
 
         bool areNeighbors(R3xS1_Voxel& other) {
-            return (topRightPosition.x() == other.bottomLeftPosition.x() || bottomLeftPosition.x() == other.topRightPosition.x()) &&
-                (topRightPosition.y() == other.bottomLeftPosition.y() || bottomLeftPosition.y() == other.topRightPosition.y()) &&
-                (topRightPosition.z() == other.bottomLeftPosition.z() || bottomLeftPosition.z() == other.topRightPosition.z()) &&
-                (topRightRotation == other.bottomLeftRotation || bottomLeftRotation == other.topRightRotation);
+            // return (topRightPosition.x() == other.bottomLeftPosition.x() || bottomLeftPosition.x() == other.topRightPosition.x()) &&
+            //     (topRightPosition.y() == other.bottomLeftPosition.y() || bottomLeftPosition.y() == other.topRightPosition.y()) &&
+            //     (topRightPosition.z() == other.bottomLeftPosition.z() || bottomLeftPosition.z() == other.topRightPosition.z()) &&
+            //     (topRightRotation == other.bottomLeftRotation || bottomLeftRotation == other.topRightRotation);
+
+            // Voxels are neighbors if their centers are close enough (factor of the diameter)
+            constexpr FT factor = 50;
+            FT sqdist = CGAL::squared_distance(this->middle().position, other.middle().position);
+            FT rotsqr = this->middle().orientation - other.middle().orientation; rotsqr *= rotsqr;
+            sqdist = sqdist + rotsqr;
+            return sqdist <= factor * factor * squareDiameter();
         }
 
     private:
@@ -250,16 +224,25 @@ namespace fdml {
         
     };
     using VoxelCloud = std::vector<R3xS1_Voxel>;
+
+    static bool verifyLocation(R3xS1 q0, AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, FT errorBound = 0) {
+        for (int i = 0; i < odometrySequence.size(); i++) {
+            R3xS2 q = q0 * odometrySequence[i];
+            FT measurement = measurementSequence[i];
+            if (abs(measurement - measurementSequence[i]) > 3.0 * errorBound) return false;
+        }
+        return true;
+    }
     
-    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, ErrorBounds errorBounds = ErrorBounds()) {
+    static VoxelCloud localize(AABBTree& env, OdometrySequence& odometrySequence, MeasurementSequence& measurementSequence, R3xS1_Voxel& boundingBox, int recursionDepth, FT errorBound = 0, bool cluster=true) {
         omp_set_num_threads(omp_get_max_threads());
 
         // Get squence of aggregated odometries
-        OdometrySequence tildeOdometries;
-        for (auto g : odometrySequence) {
-            if (tildeOdometries.empty()) tildeOdometries.push_back(g);
-            else tildeOdometries.push_back(g * tildeOdometries.back());
-        }
+        // OdometrySequence tildeOdometries;
+        // for (auto g : odometrySequence) {
+        //     if (tildeOdometries.empty()) tildeOdometries.push_back(g);
+        //     else tildeOdometries.push_back(g * tildeOdometries.back());
+        // }
 
         VoxelCloud voxels, localization;
         R3xS1_Voxel bb1 = boundingBox, bb2 = boundingBox;
@@ -270,8 +253,6 @@ namespace fdml {
         voxels.push_back(bb1);
         voxels.push_back(bb2);
 
-
-        // please write me code
         std::chrono::steady_clock::time_point begin, curr;    
         std::chrono::duration<double, std::milli> __duration;
         begin = std::chrono::steady_clock::now();
@@ -281,9 +262,9 @@ namespace fdml {
             #pragma omp parallel for
             for (auto v : voxels) {
                 bool flag = true;
-                for (int j = 0; j < tildeOdometries.size(); j++) {
+                for (int j = 0; j < odometrySequence.size(); j++) {
                     if (measurementSequence[j] < 0) continue;
-                    if (!v.predicate(tildeOdometries[j], measurementSequence[j], env, errorBounds, j)) {
+                    if (!v.predicate(odometrySequence[j], measurementSequence[j], env, errorBound, j)) {
                         flag = false;
                         break;
                     }
@@ -303,73 +284,60 @@ namespace fdml {
             }
         }
 
-        // VoxelCloud clean;
-        // for (auto v : localization) {
-        //     if (!env.do_intersect(Box(v.bottomLeftPosition, v.topRightPosition))) clean.push_back(v);
-        // }
-        // localization = clean;
+        // Sort localization lexicographically
+        std::sort(localization.begin(), localization.end(), [](R3xS1_Voxel& a, R3xS1_Voxel& b) {
+            return a.middle().position.x() < b.middle().position.x() ||
+                (a.middle().position.x() == b.middle().position.x() && a.middle().position.y() < b.middle().position.y()) ||
+                (a.middle().position.x() == b.middle().position.x() && a.middle().position.y() == b.middle().position.y() && a.middle().position.z() < b.middle().position.z()) || 
+                (a.middle().position.x() == b.middle().position.x() && a.middle().position.y() == b.middle().position.y() && a.middle().position.z() == b.middle().position.z() && a.middle().orientation < b.middle().orientation);
+        });
+
+        /////
+        if (!cluster)
+            return localization;
+        /////
+
+        std::vector<VoxelCloud> clusters;
+        for (auto v : localization) {
+            bool appended = false;
+            for (auto cluster : clusters) {
+                for (auto v_ : cluster) {
+                    if (v.areNeighbors(v_)) {
+                        cluster.push_back(v);
+                        appended = true;
+                        break;
+                    }
+                }
+                if (appended) break;
+            }
+            if (!appended) clusters.push_back(VoxelCloud({v}));
+        }
+
+        localization.clear();
+        for (auto cluster : clusters) {
+            R3xS1 p(Point(0,0,0), 0);
+            for (auto v : cluster) {
+                p.position = Point(p.position.x() + v.middle().position.x(), p.position.y() + v.middle().position.y(), p.position.z() + v.middle().position.z());
+                p.orientation += v.middle().orientation;
+            }
+            p.position = Point(p.position.x() / cluster.size(), p.position.y() / cluster.size(), p.position.z() / cluster.size());
+            p.orientation /= cluster.size();
+
+            if (!verifyLocation(p, env, odometrySequence, measurementSequence, errorBound)) {
+                continue;
+            }
+
+            // TODO: TEMP code
+            FT factor = 2.5;
+            localization.push_back(R3xS1_Voxel{
+                Point(p.position.x() - errorBound * factor, p.position.y() - errorBound * factor, p.position.z() - errorBound * factor),
+                Point(p.position.x() + errorBound * factor, p.position.y() + errorBound * factor, p.position.z() + errorBound * factor),
+                p.orientation,
+                p.orientation
+            });
+        }
 
         return localization;
-    }
-
-    static std::vector<R3xS1> clusterLocations(VoxelCloud& locations) {
-        Point center(0, 0, 0);
-        FT rotation = 0;
-        for (auto v : locations) {
-            center = Point(center.x() + (v.bottomLeftPosition.x() + v.topRightPosition.x()) / 2, center.y() + (v.bottomLeftPosition.y() + v.topRightPosition.y()) / 2, center.z() + (v.bottomLeftPosition.z() + v.topRightPosition.z()) / 2);
-            rotation += (v.bottomLeftRotation + v.topRightRotation) / 2;
-        }
-        if (locations.size() > 0) {
-            center = Point(center.x() / locations.size(), center.y() / locations.size(), center.z() / locations.size());
-            rotation /= locations.size();
-        }
-        return {R3xS1(center, rotation)};
-
-        // std::vector<VoxelCloud> clusters;
-        // for (auto v : locations) {
-        //     bool flag = false;
-        //     for (auto cluster : clusters) {
-        //         for (auto vc : cluster) {
-        //             if (v.areNeighbors(vc)) {
-        //                 cluster.push_back(v);
-        //                 flag = true;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        //     if (!flag) clusters.push_back({v});
-        // }
-
-        // std::vector<R3xS1> centers;
-        // for (auto cluster : clusters) {
-        //     Point center(0, 0, 0);
-        //     FT rotation = 0;
-        //     for (auto v : cluster) {
-        //         center = Point(center.x() + (v.bottomLeftPosition.x() + v.topRightPosition.x()) / 2, center.y() + (v.bottomLeftPosition.y() + v.topRightPosition.y()) / 2, center.z() + (v.bottomLeftPosition.z() + v.topRightPosition.z()) / 2);
-        //         rotation += (v.bottomLeftRotation + v.topRightRotation) / 2;
-        //     }
-        //     center = Point(center.x() / cluster.size(), center.y() / cluster.size(), center.z() / cluster.size());
-        //     rotation /= cluster.size();
-        //     centers.push_back(R3xS1(center, rotation));
-        // }
-        // return centers;
-    }
-
-    static OdometrySequence getGroundTruths(OdometrySequence& odometrySequence, R3xS1 q0) {
-        OdometrySequence groundTruths;
-        for (auto g : odometrySequence) {
-            if (groundTruths.empty()) groundTruths.push_back(g * q0);
-            else groundTruths.push_back(g * groundTruths.back());
-        }
-        return groundTruths;
-    }
-
-    static MeasurementSequence getMeasurementSequence(AABBTree& env, OdometrySequence& groundTruths) {
-        MeasurementSequence measurements;
-        for (auto q : groundTruths) {
-            measurements.push_back(q.measureDistance(env));
-        }
-        return measurements;
     }
     
 }

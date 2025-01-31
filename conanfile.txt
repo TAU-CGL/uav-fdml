@@ -1,9 +1,0 @@
-[requires]
-fmt/10.2.1
-boost/1.83.0
-gtest/1.14.0
-cgal/5.6.1
-
-[generators]
-CMakeDeps
-CMakeToolchain

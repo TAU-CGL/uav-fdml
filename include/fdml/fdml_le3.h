@@ -29,4 +29,18 @@ static void FDML_LE3_LoadEnvironment(le3::LE3AssetManager& assets, std::string e
     env.loadTriangles(triangles);
 }
 
+static void FDML_LE3_LoadEnvironmentPointCloud(le3::LE3PointCloudPtr pointCloud, fdml::ExperimentEnv& env, float ratio = 1.f) {
+    auto& points = pointCloud->getPoints();
+    
+    std::list<Triangle> triangles;
+    for (int i = 0; i < points.size(); i++) {
+        // Sample random number between 0 and 1
+        float rnd = (float)rand() / RAND_MAX;
+        if (rnd > ratio) continue;
 
+        Point p(points[i].position[0], points[i].position[2], points[i].position[1]);
+        Triangle t(p, p, p);
+        triangles.push_back(t);
+    }
+    env.loadTriangles(triangles);
+}

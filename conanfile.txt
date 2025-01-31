@@ -1,7 +1,6 @@
 [requires]
 fmt/10.2.1
 boost/1.83.0
-glew/2.2.0
 lua/5.4.7
 nlohmann_json/3.11.3
 gtest/1.14.0

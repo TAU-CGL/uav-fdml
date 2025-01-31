@@ -5,6 +5,7 @@ lua/5.4.7
 nlohmann_json/3.11.3
 gtest/1.14.0
 cgal/6.0.1
+cpr/1.11.1
 
 [generators]
 CMakeDeps

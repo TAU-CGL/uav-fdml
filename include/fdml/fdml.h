@@ -260,7 +260,8 @@ namespace fdml {
         for (int i = 0; i < recursionDepth; i++) {
             localization.clear();
             #pragma omp parallel for
-            for (auto v : voxels) {
+            for (int v_i = 0; v_i < voxels.size(); v_i++) {
+                auto v = voxels[v_i];
                 bool flag = true;
                 for (int j = 0; j < odometrySequence.size(); j++) {
                     if (measurementSequence[j] < 0) continue;

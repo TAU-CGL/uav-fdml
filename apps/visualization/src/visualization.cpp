@@ -44,18 +44,13 @@ void DemoGUI::init() {
             ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
 
             fmt::print("...Received: {},{},{},{},{}\n", front, back, right,left, z);
-
+            
+            localization.clear();
             env.setActualDroneLocation(gt);
             groundTruthLocations.clear();
             groundTruthLocations.push_back(gt);
             trajectoryGroundTruth.push_back(gt);
 
-            if (front < 0) return;
-            if (back < 0) return;
-            if (left < 0) return;
-            if (right < 0) return;
-            if (z < 0.1) return; // You must be far enough from obstacles to get small-volume voxel clouds
-            
             currExpIdx = 0;
 
             measurementSequences.clear();
@@ -64,6 +59,11 @@ void DemoGUI::init() {
             measurementSequences.push_back(ds);
             manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
 
+            if (front < 0) return;
+            if (back < 0) return;
+            if (left < 0) return;
+            if (right < 0) return;
+            if (z < 0.1) return; // You must be far enough from obstacles to get small-volume voxel clouds
 
             runLocalization();
 
@@ -412,6 +412,21 @@ void DemoGUI::loadOfflineData(std::string path) {
             manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
             groundTruthLocations.push_back(fdml::R3xS1(Point(x, -y, z), yaw));
         }
+        else if (m["type"] == "elaborate") {
+            std::vector<double> ds;
+            std::string ds_str = "";
+            for (double d : m["dists"]) {
+                ds.push_back(d);
+                ds_str += std::string(fmt::format("{},", d));
+            }
+            ds_str = ds_str.substr(0, ds_str.length() - 1);
+            double x = m["x"]; double y = m["y"]; double z = m["z"]; double yaw = m["yaw"];
+
+            measurementSequences.push_back(ds);
+            manualDistances.push_back(ds_str);
+            groundTruthLocations.push_back(fdml::R3xS1(Point(x, y, z), yaw));
+        }
+
     }
 
     trajectoryGroundTruth = groundTruthLocations;
@@ -424,9 +439,16 @@ void DemoGUI::loadOfflineData(std::string path) {
 void DemoGUI::renderDebug() {
     glClear(GL_DEPTH_BUFFER_BIT);
     debugDrawToFCrown();
+
+    fdml::R3xS1 q = env.getActualDroneLocation();
     for (fdml::R3xS1_Voxel v : localization) {
-        debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
+        if (fdml::R3xS1::deltaPosition(q, v.middle()) < 0.2)
+            debugDrawVoxel(v, glm::vec3(0.f, 1.f, 0.f));
+        else
+            debugDrawVoxel(v, glm::vec3(0.f, 1.f, 1.f));
     }
+
+
     if (showAxes) {
         LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f));
         LE3GetVisualDebug().drawDebugLine(glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
@@ -434,12 +456,13 @@ void DemoGUI::renderDebug() {
     }
 
     debugDrawTrajectory(trajectoryGroundTruth, glm::vec3(0.f, 1.f, 0.f), false);
-    // debugDrawTrajectory(trajectoryPredicted, glm::vec3(0.f, 1.f, 1.f), false);
+    debugDrawTrajectory(trajectoryPredicted, glm::vec3(0.f, 1.f, 1.f), false);
 }
 
 void DemoGUI::debugDrawToFCrown() {
     if (droneControlMode == DroneControlMode::OFFLINE && currExpIdx < 0) return;
-    if (droneControlMode == DroneControlMode::ONLINE) return;
+    if (droneControlMode == DroneControlMode::ONLINE) currExpIdx = measurementSequences.size() - 1;
+    if (measurementSequences.size() == 0) return;
 
     fdml::OdometrySequence tofCrown = env.getToFCrown();
     int idx = 0;

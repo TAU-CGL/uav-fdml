@@ -18,6 +18,7 @@ void DemoGUI::init() {
     LE3GetSceneManager().getActiveScene()->load("/fdml/demo_scene.lua");
     LE3GetSceneManager().getActiveScene()->getMainCamera()->getTransform().setPosition(glm::vec3(0.f, 0.05f, 0.f));
     LE3GetSceneManager().getActiveScene()->getMainCamera()->setPitchYaw(0.f, -1.57f);
+    LE3GetActiveScene()->getMainCamera()->setFov(DEFAULT_CAMERA_FOV * M_PI / 180.f);
     LE3GetActiveScene()->setCulling(true);
 
     /// -------------------------------
@@ -28,15 +29,45 @@ void DemoGUI::init() {
     loadEnvironment(availableEnvs[0]);
 
     // Setup online demo
+    LE3GetNetworking().setDelay(25);
     networkSpinner = std::make_shared<LE3NetworkSpinner>();
     LE3GetActiveScene()->addCustomObject("__networkSpinner", networkSpinner);
     networkSpinner->setSend([&]() {
         return LE3GetNetworking().sendRequest(LE3NetworkRequestType::GET, m_url + "/get_recent_measurement"); 
     });
-    networkSpinner->setOnResponse([](LE3NetworkRequest nr) {
-            fmt::print("{}\n", nr.response);
+    networkSpinner->setOnResponse([&](LE3NetworkRequest nr) {
+            json j = json::parse(nr.response)["measurement"];
+            double x = j["x"]; double y = j["y"]; double z = j["z"]; double yaw = -(double)j["yaw"] + M_PI;
+            fdml::R3xS1 gt(Point(x, -y, z), yaw);
+            double front = j["front"]; double back = j["back"]; double left = j["left"]; double right = j["right"];
+            std::vector<double> ds;
+            ds.push_back(front); ds.push_back(back); ds.push_back(right); ds.push_back(left); ds.push_back(-1); ds.push_back(z);
+
+            fmt::print("...Received: {},{},{},{},{}\n", front, back, right,left, z);
+
+            env.setActualDroneLocation(gt);
+            groundTruthLocations.clear();
+            groundTruthLocations.push_back(gt);
+            trajectoryGroundTruth.push_back(gt);
+
+            if (front < 0) return;
+            if (back < 0) return;
+            if (left < 0) return;
+            if (right < 0) return;
+            if (z < 0.1) return; // You must be far enough from obstacles to get small-volume voxel clouds
+            
+            currExpIdx = 0;
+
+            measurementSequences.clear();
+            manualDistances.clear();
+
+            measurementSequences.push_back(ds);
+            manualDistances.push_back(fmt::format("{},{},{},{},-1,{}", front, back, right,left, z));
+
+
+            runLocalization();
+
     });
-    networkSpinner->start();
     
     fflush(stdout);
 }
@@ -76,11 +107,11 @@ void DemoGUI::runLocalization() {
         fmt::print("No localization found\n");
         return;
     }
-    for (fdml::R3xS1_Voxel v : localization) {
-        fmt::print("{} {} {} {}\n", 
-            v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation
-        );
-    }
+    // for (fdml::R3xS1_Voxel v : localization) {
+    //     fmt::print("{} {} {} {}\n", 
+    //         v.bottomLeftPosition.x(), v.bottomLeftPosition.y(), v.bottomLeftPosition.z(), v.bottomLeftRotation
+    //     );
+    // }
 
     fdml::R3xS1 nearestLocation = env.bestPrediction(localization);
 
@@ -99,8 +130,8 @@ void DemoGUI::runLocalization() {
     }
 
     if (badLocalizations > 10) {
-        trajectoryPredicted.push_back(fdml::R3xS1(Point(lastLocation.position.x(), lastLocation.position.y(), 1000), 0));
-        trajectoryPredicted.push_back(fdml::R3xS1(Point(groundTruthLocations[currExpIdx].position.x(), groundTruthLocations[currExpIdx].position.y(), 1000), 0));
+        // trajectoryPredicted.push_back(fdml::R3xS1(Point(lastLocation.position.x(), lastLocation.position.y(), 1000), 0));
+        // trajectoryPredicted.push_back(fdml::R3xS1(Point(groundTruthLocations[currExpIdx].position.x(), groundTruthLocations[currExpIdx].position.y(), 1000), 0));
         trajectoryPredicted.push_back(groundTruthLocations[currExpIdx]);
         badLocalizations = 0;
     }
@@ -194,9 +225,29 @@ void DemoGUI::panelFDMLParams() {
     static float epsilon;
     ImGui::InputDouble("epsilon", &errorBound);
     ImGui::Checkbox("Cluster", &cluster);
+
+    if (ImGui::Button("Clear Trajectories")) {
+        clearTrajectories();
+    }
 }
 void DemoGUI::panelOnline() {
     ImGui::SeparatorText("Online Demonstration");
+
+    ImGui::Text("Status: ");
+    ImGui::SameLine();
+    if (networkSpinner->isRunning())
+        ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Running");
+    else
+        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Not Running");
+
+    if (ImGui::Button("Start")) {
+        networkSpinner->start();
+        clearTrajectories();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Stop")) {
+        networkSpinner->stop();
+    }
 }
 void DemoGUI::panelOffline() {
     ImGui::SeparatorText("Offline Trajectory");
@@ -256,6 +307,10 @@ void DemoGUI::panelGraphics() {
     if (ImGui::Checkbox("Face Culling", &shouldCull))
         LE3GetActiveScene()->setCulling(shouldCull);
     
+    float fov = LE3GetActiveScene()->getMainCamera()->getFov() * 180.f / M_PI;
+    ImGui::SliderFloat("FOV", &fov, 10.f, 170.f);
+    LE3GetActiveScene()->getMainCamera()->setFov(fov * M_PI / 180.f);
+
     if (pointCloud) {
         float pointSize = pointCloud->getPointSize();
         ImGui::SliderFloat("Point Size", &pointSize, 1.f, 30.f);
@@ -288,7 +343,7 @@ void DemoGUI::loadEnvironment(std::string path) {
             LE3GetActiveScene()->addPointCloud(name);
             LE3GetActiveScene()->getObject<LE3PointCloud>(name)->fromFile(selectedEnv, true);
             LE3GetActiveScene()->getObject<LE3PointCloud>(name)->create();
-            FDML_LE3_LoadEnvironmentPointCloud(LE3GetActiveScene()->getObject<LE3PointCloud>(name), env, 0.1f);
+            FDML_LE3_LoadEnvironmentPointCloud(LE3GetActiveScene()->getObject<LE3PointCloud>(name), env, 0.2f);
             pointCloud = LE3GetActiveScene()->getObject<LE3PointCloud>(name);
             pointCloud->setPointSize(DEFAULT_PC_SIZE);
             pointCloud->setOpacity(DEFAULT_PC_OPACITY);
@@ -379,7 +434,7 @@ void DemoGUI::renderDebug() {
     }
 
     debugDrawTrajectory(trajectoryGroundTruth, glm::vec3(0.f, 1.f, 0.f), false);
-    debugDrawTrajectory(trajectoryPredicted, glm::vec3(0.f, 1.f, 1.f), true);
+    // debugDrawTrajectory(trajectoryPredicted, glm::vec3(0.f, 1.f, 1.f), false);
 }
 
 void DemoGUI::debugDrawToFCrown() {
@@ -413,7 +468,7 @@ void DemoGUI::debugDrawToFCrown() {
 
 void DemoGUI::initDrone() {
     LE3GetSceneManager().getActiveScene()->addStaticModel("__drone", "SM_drone", "M_drone");
-    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(glm::vec3(2.f));
+    LE3GetSceneManager().getActiveScene()->getObject("__drone")->getTransform().setScale(glm::vec3(1.5f));
     setupDroneSensor();
 }
 void DemoGUI::setupDroneSensor() {
@@ -438,13 +493,17 @@ void DemoGUI::debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color) {
 void DemoGUI::debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3 color, bool smooth, int smoothWindow) {
     if (trajectory.size() < 2) return;
 
+    float large = 20.f;
+
     if (smooth) {
         std::vector<fdml::R3xS1> smoothedTrajectory;
         for (int i = 0; i < trajectory.size(); i++) {
             fdml::R3xS1 p = trajectory[i];
+            if (p.position.z() > large) continue;
             int start = std::max(0, i - smoothWindow);
             int end = std::min((int)trajectory.size() - 1, i + smoothWindow);
             for (int j = start; j <= end; j++) {
+                if (trajectory[j].position.z() > large) continue;
                 p.position = Point(p.position.x() + trajectory[j].position.x(), p.position.y() + trajectory[j].position.y(), p.position.z() + trajectory[j].position.z());
                 p.orientation = p.orientation + trajectory[j].orientation;
             }
@@ -459,7 +518,7 @@ void DemoGUI::debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3
         glm::vec3 p1 = glm::vec3(trajectory[i].position.x(), trajectory[i].position.z(), trajectory[i].position.y());
         glm::vec3 p2 = glm::vec3(trajectory[i + 1].position.x(), trajectory[i + 1].position.z(), trajectory[i + 1].position.y());
         glm::vec3 tmpColor = color;
-        if (p1.y > 20.f || p2.y > 20.f) {
+        if (p1.y > large || p2.y > large) {
             tmpColor = glm::vec3(1.f, 0.f, 0.f);
             continue;
         }

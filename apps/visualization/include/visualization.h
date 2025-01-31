@@ -13,8 +13,9 @@ using namespace le3;
 #include <fdml/fdml_le3.h>
 #include <fdml/fdml_utils.h>
 
-constexpr float DEFAULT_PC_SIZE = 3.f;
-constexpr float DEFAULT_PC_OPACITY = 0.2f;
+constexpr float DEFAULT_PC_SIZE = 2.f;
+constexpr float DEFAULT_PC_OPACITY = 0.3f;
+constexpr float DEFAULT_CAMERA_FOV = 75.f;
 
 class DemoGUI : public LE3SimpleDemo {
 public:
@@ -81,6 +82,11 @@ protected:
     // Methods
     void panelFDMLParams();
     void runLocalization();
+    void clearTrajectories() {
+        trajectoryGroundTruth.clear();
+        trajectoryPredicted.clear();
+        localization.clear();
+    }
 
     ////////////////////////////////////////////////
 
@@ -132,7 +138,7 @@ protected:
     void panelGraphics();
     void debugDrawVoxel(fdml::R3xS1_Voxel voxel, glm::vec3 color);
     void debugDrawToFCrown();
-    void debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3 color, bool smooth, int smoothWindow=20);
+    void debugDrawTrajectory(std::vector<fdml::R3xS1> trajectory, glm::vec3 color, bool smooth, int smoothWindow=1);
 
     ////////////////////////////////////////////////    
 };

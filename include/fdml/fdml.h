@@ -284,6 +284,14 @@ namespace fdml {
             }
         }
 
+        // Sort localization lexicographically
+        std::sort(localization.begin(), localization.end(), [](R3xS1_Voxel& a, R3xS1_Voxel& b) {
+            return a.middle().position.x() < b.middle().position.x() ||
+                (a.middle().position.x() == b.middle().position.x() && a.middle().position.y() < b.middle().position.y()) ||
+                (a.middle().position.x() == b.middle().position.x() && a.middle().position.y() == b.middle().position.y() && a.middle().position.z() < b.middle().position.z()) || 
+                (a.middle().position.x() == b.middle().position.x() && a.middle().position.y() == b.middle().position.y() && a.middle().position.z() == b.middle().position.z() && a.middle().orientation < b.middle().orientation);
+        });
+
         /////
         if (!cluster)
             return localization;

@@ -8,6 +8,8 @@
 Few-measurement Localization with Approximations of Preimages for Indoor UAVs. Contains the original source code (see `v1` branch) of "Indoor Localization of UAVs Using Only Few Distance Measurement by Output Sensitive Preimage Intersection" (to appear in ICRA 2025).
 Current branch is the further improved version, supporting real-time online localization of indoor drones, equipped with a few sensors pointing at arbitrary directions. Under review as "Demonstrating Effective Indoor UAV Localization with a Low-Cost ToF Sensor Crown" for RSS 2025.
 
+See [https://www.cgl.cs.tau.ac.il/projects/demonstrating-effective-indoor-uav-localization-with-a-low-cost-tof-sensor-crown/](https://www.cgl.cs.tau.ac.il/projects/demonstrating-effective-indoor-uav-localization-with-a-low-cost-tof-sensor-crown/) for the project site.
+
 ## Installation and Usage
 
 Please visit the [Wiki](https://github.com/TAU-CGL/uav-fdml/wiki) for detailed instruction for installation and usage of the software. This program was built and tested for macOS, Windows and Linux machines.
